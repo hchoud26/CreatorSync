@@ -148,7 +148,8 @@ CreatorSync/
 │   ├── js/                     # JavaScript modules
 │   ├── index.html              # Main app interface
 │   └── .gitkeep
-└── .gitignore```
+└── .gitignore
+```
 
 
 ## Key Features
