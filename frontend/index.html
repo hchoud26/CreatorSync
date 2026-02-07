@@ -10,233 +10,64 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0a0a0f;
-            color: #ffffff;
-            min-height: 100vh;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #ffffff; min-height: 100vh; }
         
         /* Screen System */
-        .screen {
-            display: none;
-            min-height: 100vh;
-            padding-top: 80px;
-        }
-        
-        .screen.active {
-            display: block;
-        }
+        .screen { display: none; min-height: 100vh; padding-top: 80px; }
+        .screen.active { display: block; }
         
         /* Gradient Effects */
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         
         /* Glassmorphism */
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .glass-hover:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-hover:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); }
         
         /* Animations */
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-100px); } }
+        @keyframes matchPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(102, 126, 234, 0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
         
-        @keyframes slideOut {
-            from {
-                opacity: 1;
-                transform: translateX(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateX(-100px);
-            }
-        }
-        
-        @keyframes matchPulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 0 20px rgba(102, 126, 234, 0);
-            }
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        @keyframes confetti-fall {
-            0% {
-                transform: translateY(-100vh) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(100vh) rotate(720deg);
-                opacity: 0;
-            }
-        }
-        
-        .card-enter {
-            animation: slideIn 0.4s ease-out forwards;
-        }
-        
-        .card-pass {
-            animation: slideOut 0.3s ease-in forwards;
-        }
-        
-        .match-pulse {
-            animation: matchPulse 2s infinite;
-        }
-        
-        .floating {
-            animation: float 3s ease-in-out infinite;
-        }
+        .card-enter { animation: slideIn 0.4s ease-out forwards; }
+        .card-pass { animation: slideOut 0.3s ease-in forwards; }
+        .match-pulse { animation: matchPulse 2s infinite; }
+        .floating { animation: float 3s ease-in-out infinite; }
         
         /* Confetti */
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            pointer-events: none;
-            z-index: 9999;
-        }
+        .confetti { position: fixed; width: 10px; height: 10px; pointer-events: none; z-index: 9999; }
         
         /* Tag States */
-        .tag {
-            transition: all 0.2s ease;
-        }
-        
-        .tag.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: transparent;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
+        .tag { transition: all 0.2s ease; }
+        .tag.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-color: transparent; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
         
         /* Buttons */
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: all 0.2s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.2s ease;
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
-            transition: all 0.2s ease;
-        }
-        
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(86, 171, 47, 0.4);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-            transition: all 0.2s ease;
-        }
-        
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(235, 51, 73, 0.4);
-        }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: all 0.2s ease; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.2s ease; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); }
+        .btn-success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); transition: all 0.2s ease; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(86, 171, 47, 0.4); }
+        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); transition: all 0.2s ease; }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(235, 51, 73, 0.4); }
         
         /* Toast */
-        .toast-container {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            z-index: 9999;
-            pointer-events: none;
-        }
-        
-        .toast {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 16px 24px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .toast.show {
-            transform: translateX(0);
-        }
+        .toast-container { position: fixed; top: 100px; right: 20px; z-index: 9999; pointer-events: none; }
+        .toast { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 16px 24px; border-radius: 12px; margin-bottom: 10px; transform: translateX(100%); transition: transform 0.3s ease; }
+        .toast.show { transform: translateX(0); }
         
         /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #0a0a0f;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 4px;
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0f; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; }
         
         /* Chat */
-        .chat-message {
-            max-width: 70%;
-            word-wrap: break-word;
-        }
-        
-        .chat-message.sent {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .chat-message.received {
-            background: rgba(255, 255, 255, 0.1);
-        }
+        .chat-message { max-width: 70%; word-wrap: break-word; }
+        .chat-message.sent { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .chat-message.received { background: rgba(255, 255, 255, 0.1); }
         
         /* Status Badges */
         .badge-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
@@ -245,13 +76,10 @@
         .badge-matched { background: rgba(132, 204, 22, 0.2); color: #84cc16; border: 1px solid rgba(132, 204, 22, 0.4); }
         
         /* Clip Card */
-        .clip-thumbnail {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        }
+        .clip-thumbnail { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
     </style>
 </head>
 <body>
-    <!-- Fixed Top Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 glass">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
@@ -282,10 +110,8 @@
         </div>
     </nav>
 
-    <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- SCREEN 1: Role Select -->
     <section id="role-select" class="screen active">
         <div class="min-h-screen flex items-center justify-center p-4">
             <div class="max-w-4xl w-full">
@@ -298,7 +124,6 @@
                 </div>
                 
                 <div class="grid md:grid-cols-2 gap-8">
-                    <!-- Creator Card -->
                     <button type="button" onclick="selectRole('creator')" class="glass glass-hover rounded-3xl p-8 text-left transition-all duration-300 group">
                         <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6 group-hover:scale-110 transition">
                             <i data-lucide="video" class="w-8 h-8 text-white"></i>
@@ -311,7 +136,6 @@
                         </div>
                     </button>
                     
-                    <!-- Editor Card -->
                     <button type="button" onclick="selectRole('editor')" class="glass glass-hover rounded-3xl p-8 text-left transition-all duration-300 group">
                         <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mb-6 group-hover:scale-110 transition">
                             <i data-lucide="scissors" class="w-8 h-8 text-white"></i>
@@ -328,7 +152,6 @@
         </div>
     </section>
 
-    <!-- SCREEN 2: Editor Onboarding -->
     <section id="editor-onboarding" class="screen">
         <div class="min-h-screen flex items-center justify-center p-4 py-12">
             <div class="max-w-2xl w-full">
@@ -338,7 +161,6 @@
                 </div>
                 
                 <div class="glass rounded-3xl p-8 space-y-8">
-                    <!-- Clip Upload Section -->
                     <div class="space-y-4">
                         <label class="block text-lg font-semibold">Showcase Your Work</label>
                         <div class="border-2 border-dashed border-gray-600 rounded-2xl p-8 text-center hover:border-purple-500 transition cursor-pointer" onclick="simulateUpload()">
@@ -359,7 +181,6 @@
                         </div>
                     </div>
                     
-                    <!-- Tags Selection -->
                     <div class="space-y-4">
                         <label class="block text-lg font-semibold">Content Types You Edit</label>
                         <div class="flex flex-wrap gap-3" id="contentTypeTags">
@@ -382,7 +203,6 @@
                         </div>
                     </div>
                     
-                    <!-- Optional Bio -->
                     <div class="space-y-4">
                         <label class="block text-lg font-semibold">Bio <span class="text-gray-500 font-normal">(Optional)</span></label>
                         <textarea id="editorBio" rows="3" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Tell streamers about your editing philosophy..."></textarea>
@@ -397,7 +217,6 @@
         </div>
     </section>
 
-    <!-- SCREEN 3: Creator Bio -->
     <section id="creator-bio" class="screen">
         <div class="min-h-screen flex items-center justify-center p-4 py-12">
             <div class="max-w-2xl w-full">
@@ -458,13 +277,11 @@
         </div>
     </section>
 
-    <!-- SCREEN 4: Creator Feed -->
     <section id="creator-feed" class="screen">
         <div class="min-h-screen flex items-center justify-center p-4">
             <div class="max-w-lg w-full">
                 <div id="feedContainer" class="space-y-6">
-                    <!-- Feed content populated by JS -->
-                </div>
+                    </div>
                 <div id="feedEmpty" class="hidden text-center glass rounded-3xl p-12">
                     <i data-lucide="search" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
                     <h3 class="text-2xl font-bold mb-2">No More Editors</h3>
@@ -477,14 +294,12 @@
         </div>
     </section>
 
-    <!-- SCREEN 5: Creator Requests Sent -->
     <section id="creator-requests-sent" class="screen">
         <div class="min-h-screen p-4 py-12">
             <div class="max-w-4xl mx-auto">
                 <h2 class="text-4xl font-bold mb-8 text-center">Your Sent Requests</h2>
                 <div id="sentRequestsList" class="grid gap-4">
-                    <!-- Populated by JS -->
-                </div>
+                    </div>
                 <div id="sentRequestsEmpty" class="hidden text-center glass rounded-3xl p-12">
                     <i data-lucide="send" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
                     <h3 class="text-2xl font-bold mb-2">No Requests Yet</h3>
@@ -497,14 +312,12 @@
         </div>
     </section>
 
-    <!-- SCREEN 6: Editor Requests -->
     <section id="editor-requests" class="screen">
         <div class="min-h-screen p-4 py-12">
             <div class="max-w-4xl mx-auto">
                 <h2 class="text-4xl font-bold mb-8 text-center">Incoming Requests</h2>
                 <div id="editorRequestsList" class="grid gap-4">
-                    <!-- Populated by JS -->
-                </div>
+                    </div>
                 <div id="editorRequestsEmpty" class="hidden text-center glass rounded-3xl p-12">
                     <i data-lucide="inbox" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
                     <h3 class="text-2xl font-bold mb-2">No Incoming Requests</h3>
@@ -514,7 +327,6 @@
         </div>
     </section>
 
-    <!-- SCREEN 7: Full Profile -->
     <section id="full-profile" class="screen">
         <div class="min-h-screen p-4 py-12">
             <div class="max-w-4xl mx-auto">
@@ -535,40 +347,36 @@
                             </div>
                             <h2 id="fullProfileName" class="text-3xl font-bold mb-4">Creator Name Hidden</h2>
                             <div id="fullProfileTags" class="flex flex-wrap gap-2">
-                                <!-- Populated by JS -->
-                            </div>
+                                </div>
                         </div>
                     </div>
                     
                     <div class="grid md:grid-cols-2 gap-6">
                         <div class="space-y-3">
                             <h3 class="text-lg font-semibold">About</h3>
-                            <p id="fullProfileBio" class="text-gray-400 leading-relaxed"><!-- Populated by JS --></p>
+                            <p id="fullProfileBio" class="text-gray-400 leading-relaxed"></p>
                         </div>
                         <div class="space-y-3">
                             <h3 class="text-lg font-semibold">What They Stream</h3>
-                            <p id="fullProfileStream" class="text-gray-400 leading-relaxed"><!-- Populated by JS --></p>
+                            <p id="fullProfileStream" class="text-gray-400 leading-relaxed"></p>
                         </div>
                     </div>
                     
                     <div class="space-y-3">
                         <h3 class="text-lg font-semibold">What They Want</h3>
-                        <p id="fullProfileWant" class="text-gray-400 leading-relaxed"><!-- Populated by JS --></p>
+                        <p id="fullProfileWant" class="text-gray-400 leading-relaxed"></p>
                     </div>
                     
                     <div class="space-y-3">
                         <h3 class="text-lg font-semibold">Preferred Styles</h3>
                         <div id="fullProfileStyles" class="flex flex-wrap gap-2">
-                            <!-- Populated by JS -->
-                        </div>
+                            </div>
                     </div>
                     
-                    <!-- Clip Gallery -->
                     <div class="space-y-4">
                         <h3 class="text-lg font-semibold">Editor's Work Samples</h3>
                         <div id="fullProfileClips" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <!-- Populated by JS -->
-                        </div>
+                            </div>
                     </div>
                     
                     <div class="flex gap-4 pt-4">
@@ -586,7 +394,6 @@
         </div>
     </section>
 
-    <!-- SCREEN 8: Match Success -->
     <section id="match-success" class="screen">
         <div id="confettiContainer"></div>
         <div class="min-h-screen flex items-center justify-center p-4">
@@ -630,7 +437,6 @@
         </div>
     </section>
 
-    <!-- SCREEN 9: Chat -->
     <section id="chat" class="screen">
         <div class="min-h-screen flex flex-col max-w-4xl mx-auto p-4">
             <div class="glass rounded-t-2xl p-4 flex items-center justify-between">
@@ -651,8 +457,7 @@
             </div>
             
             <div id="chatMessages" class="flex-1 glass border-t-0 border-b-0 overflow-y-auto p-4 space-y-4 min-h-[400px] max-h-[600px]">
-                <!-- Messages populated by JS -->
-            </div>
+                </div>
             
             <div class="glass rounded-b-2xl p-4 flex gap-3">
                 <input type="text" id="chatInput" class="flex-1 bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendMessage()">
@@ -667,48 +472,7 @@
         // ==================== STATE MANAGEMENT ====================
         
         let state = {
-            editors: [
-                {
-                    id: 'editor1',
-                    anonymousName: 'Anonymous Editor A',
-                    tags: ['Minecraft', 'Meme Edits', 'Fast-Paced'],
-                    clips: [1, 2, 3],
-                    bio: 'Passionate about creating viral Minecraft content with fast-paced meme edits.',
-                    realName: 'AlexEditor'
-                },
-                {
-                    id: 'editor2',
-                    anonymousName: 'Anonymous Editor B',
-                    tags: ['IRL', 'Cinematic', 'Motion Graphics'],
-                    clips: [1, 2, 3, 4],
-                    bio: 'Specializing in cinematic IRL content with professional motion graphics.',
-                    realName: 'SamEdits'
-                },
-                {
-                    id: 'editor3',
-                    anonymousName: 'Anonymous Editor C',
-                    tags: ['Gaming', 'Subtitles', 'Fast-Paced'],
-                    clips: [1, 2, 3],
-                    bio: 'Quick turnaround editor focused on gaming highlights with crispy subtitles.',
-                    realName: 'GameCutter'
-                },
-                {
-                    id: 'editor4',
-                    anonymousName: 'Anonymous Editor D',
-                    tags: ['Just Chatting', 'Motion Graphics', 'Cinematic'],
-                    clips: [1, 2, 3, 4, 5],
-                    bio: 'Creating beautiful Just Chatting content with cinematic flair.',
-                    realName: 'ChatVibes'
-                },
-                {
-                    id: 'editor5',
-                    anonymousName: 'Anonymous Editor E',
-                    tags: ['Politics', 'Subtitles', 'Meme Edits'],
-                    clips: [1, 2, 3],
-                    bio: 'Political content editor who knows how to make complex topics engaging.',
-                    realName: 'NewsClipper'
-                }
-            ],
+            editors: [], // Will be populated from Backend
             creators: [],
             requests: [],
             currentCreatorId: null,
@@ -748,6 +512,39 @@
                 preferredStyles: ['Fast-Paced', 'Subtitles']
             }
         ];
+
+        // ==================== BACKEND CONNECTION ====================
+
+        async function loadLiveData() {
+            try {
+                console.log("⏳ Fetching data from Port 5000...");
+                const response = await fetch('http://localhost:5000/api/twitch/clips');
+                const clips = await response.json();
+
+                console.log("✅ Data received:", clips);
+
+                // TRANSFORM: Convert Backend Clips into Frontend "Editors"
+                state.editors = clips.map((clip, index) => ({
+                    id: clip.id,
+                    anonymousName: `Editor #${index + 1}`,
+                    realName: clip.creator_name, // The actual clipper's name
+                    bio: clip.title, // Use the Clip Title as their "Bio"
+                    tags: ['Gaming', 'Clips', clip.language || 'EN'], // Generate tags
+                    // Use real thumbnail or placeholder
+                    thumbnail: clip.thumbnail_url || "https://via.placeholder.com/640x360",
+                    clips: [1, 2, 3] // Dummy sub-clips for layout
+                }));
+
+                // Reset feed to start
+                state.feedIndex = 0;
+                renderFeed();
+                showToast('Connected to Backend!', 'success');
+
+            } catch (error) {
+                console.error("❌ Backend Error:", error);
+                showToast('Backend offline', 'error');
+            }
+        }
 
         // ==================== NAVIGATION ====================
         
@@ -925,53 +722,13 @@
 
         // ==================== CREATOR FEED ====================
         
-        function scoreEditorForCreator(editor, creator) {
-            let score = 0;
-            
-            // Content type match is required
-            const contentTypes = ['Minecraft', 'IRL', 'Politics', 'Gaming', 'Just Chatting'];
-            const editorContentType = editor.tags.find(t => contentTypes.includes(t));
-            if (editorContentType !== creator.contentType) {
-                return -1; // Exclude non-matching content types
-            }
-            
-            score += 10; // Base score for content match
-            
-            // Style matches
-            const editorStyles = editor.tags.filter(t => !contentTypes.includes(t));
-            creator.preferredStyles.forEach(style => {
-                if (editorStyles.includes(style)) score += 5;
-            });
-            
-            return score;
-        }
-
-        function getCuratedEditors() {
-            const creator = state.creators.find(c => c.id === state.currentCreatorId);
-            if (!creator) return [];
-            
-            const scored = state.editors.map(editor => ({
-                editor,
-                score: scoreEditorForCreator(editor, creator)
-            })).filter(item => item.score > 0);
-            
-            scored.sort((a, b) => b.score - a.score);
-            return scored.map(item => item.editor);
-        }
-
         function renderFeed() {
             const container = document.getElementById('feedContainer');
             const empty = document.getElementById('feedEmpty');
-            const curated = getCuratedEditors();
             
-            // Filter out editors that already have requests from this creator
-            const available = curated.filter(editor => 
-                !state.requests.find(r => 
-                    r.editorId === editor.id && 
-                    r.creatorId === state.currentCreatorId &&
-                    r.status !== 'passed'
-                )
-            );
+            // In the "Real Data" version, we show all editors fetched from backend
+            // (Simplifying curation logic for the demo)
+            const available = state.editors;
             
             if (state.feedIndex >= available.length || available.length === 0) {
                 container.innerHTML = '';
@@ -985,7 +742,7 @@
             container.innerHTML = `
                 <div class="glass rounded-3xl overflow-hidden card-enter" id="feedCard">
                     <div class="aspect-video clip-thumbnail flex items-center justify-center relative group">
-                        <img src="http://static.photos/technology/640x360/${editor.id.slice(-1)}" 
+                        <img src="${editor.thumbnail}" 
                              class="absolute inset-0 w-full h-full object-cover" 
                              alt="Editor clip">
                         <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
@@ -1017,9 +774,9 @@
                         <div class="grid grid-cols-3 gap-3 pt-2">
                             ${editor.clips.map((_, i) => `
                                 <div class="aspect-video rounded-lg overflow-hidden bg-gray-800">
-                                    <img src="http://static.photos/workspace/320x240/${i+1}" 
-                                         class="w-full h-full object-cover" 
-                                         alt="Clip ${i+1}">
+                                    <div class="w-full h-full flex items-center justify-center bg-gray-700">
+                                         <i data-lucide="video" class="w-6 h-6 text-gray-400"></i>
+                                    </div>
                                 </div>
                             `).slice(0, 3).join('')}
                         </div>
@@ -1234,10 +991,8 @@
             
             // Show editor clips
             document.getElementById('fullProfileClips').innerHTML = editor?.clips.map((_, i) => `
-                <div class="aspect-video rounded-lg overflow-hidden">
-                    <img src="http://static.photos/workspace/320x240/${i+1}" 
-                         class="w-full h-full object-cover" 
-                         alt="Clip ${i+1}">
+                <div class="aspect-video rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center">
+                    <i data-lucide="video" class="w-8 h-8 text-gray-500"></i>
                 </div>
             `).join('') || '';
             
@@ -1359,8 +1114,9 @@
             // Add sample creators to state
             state.creators = [...sampleCreators];
             
-            console.log("State initialized:", state);
+            // 🔥 CONNECT TO BACKEND
+            loadLiveData();
         });
     </script>
 </body>
-</head>
+</html>
