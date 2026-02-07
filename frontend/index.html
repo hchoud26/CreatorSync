@@ -390,11 +390,6 @@
             <div id="fullProfileStyles" class="flex flex-wrap gap-2"></div>
           </div>
 
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold">Editor's Work Samples</h3>
-            <div id="fullProfileClips" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-          </div>
-
           <div class="flex gap-4 pt-4">
             <button type="button" id="passProfileBtn" onclick="passFromProfile()" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
               <i data-lucide="x" class="w-5 h-5"></i>
@@ -692,27 +687,34 @@
 
     // ==================== DEMO EDITORS ====================
     function seedDemoEditors() {
-      state.editors = [
-        {
-          id: "editor_demo",
-          anonymousName: "Anonymous Editor A",
-          realName: "AlexEditor",
-          bio: "Fast-paced meme cuts + captions built for clips and shorts. Beat-sync, zoom cuts, viral pacing.",
-          tags: ["Minecraft","Fast-Paced","Meme Edits","Subtitles","YouTube Shorts","Clips Farming"],
-          thumbnail: "https://via.placeholder.com/900x500.png?text=Editor+Clip+Preview",
-          clips: [1,2,3]
-        },
-        {
-          id: "editor_demo2",
-          anonymousName: "Anonymous Editor B",
-          realName: "SamEdits",
-          bio: "Cinematic IRL storyteller: color grading, sound design, motion graphics, B-roll heavy edits.",
-          tags: ["IRL","Cinematic","Motion Graphics","Color Grading","Sound Design","Storytelling"],
-          thumbnail: "https://via.placeholder.com/900x500.png?text=Cinematic+Preview",
-          clips: [1,2,3]
-        }
-      ];
+  state.editors = [
+    {
+      id: "editor_demo",
+      anonymousName: "DarthVader",
+      realName: "EditEmily",
+      bio: "Fast-paced meme cuts + captions built for clips and shorts. Beat-sync, zoom cuts, viral pacing.",
+      tags: [,"Meme Edits","Subtitles","YouTube Shorts","Clips Farming"],
+      topClip: "EnticingGlutenFreePistachioBrainSlug-ngMDjSo_2WIMvmwD",
+      images: [
+        "assets/images/jasonsub.png",
+        "assets/images/ludwig.png"
+      ]
+    },
+    {
+      id: "editor_demo2",
+      anonymousName: "Anonymous Panda",
+      realName: "FlamesEdits",
+      bio: "Cinematic IRL storyteller: color grading, sound design, motion graphics, B-roll heavy edits.",
+      tags: ["Valorant","Minecraft","Fast-Paced","Color Grading","Sound Design","Storytelling"],
+      topClip: "SuperPiliableLEDDerp-_CziAa5hoj9iS2Gh",
+      images: [
+        "assets/images/maxresdefault.jpg",
+        "assets/images/minecraft.jpg"
+      ]
     }
+  ];
+}
+
 
     // ==================== NAVIGATION ====================
     function showScreen(id) {
@@ -847,24 +849,32 @@
       const editor = available[state.feedIndex];
 
       container.innerHTML = `
-        <div class="glass rounded-3xl overflow-hidden card-enter" id="feedCard">
-          <div class="aspect-video clip-thumbnail flex items-center justify-center relative group">
-            <img src="${editor.thumbnail}" class="absolute inset-0 w-full h-full object-cover" alt="Editor clip">
-            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-              <i data-lucide="play-circle" class="w-16 h-16 text-white"></i>
-            </div>
-          </div>
+       <!-- TOP CLIP (editor-specific) -->
+<div class="aspect-video rounded-xl overflow-hidden mb-4">
+  <iframe
+    src="https://clips.twitch.tv/embed?clip=${editor.topClip}&parent=127.0.0.1"
+    height="100%"
+    width="100%"
+    allowfullscreen="true"
+    scrolling="no"
+    frameborder="0">
+  </iframe>
+</div>
 
-          <div class="p-6 space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-xl font-bold">${escapeHtml(editor.anonymousName)}</h3>
-                <p class="text-gray-400 text-sm">Professional Video Editor</p>
-              </div>
-              <div class="w-12 h-12 rounded-full gradient-bg flex items-center justify-center">
-                <i data-lucide="user" class="w-6 h-6 text-white"></i>
-              </div>
-            </div>
+<!-- IMAGE THUMBNAILS -->
+<div class="grid grid-cols-3 gap-3 pt-2">
+  ${editor.images.map(img => `
+    <div class="aspect-video rounded-lg overflow-hidden">
+      <img src="${img}" class="w-full h-full object-cover" />
+    </div>
+  `).join('')}
+
+  <!-- Greyed-out placeholder -->
+  <div class="aspect-video rounded-lg flex items-center justify-center bg-gray-800/60 border border-gray-700">
+    <i data-lucide="video-off" class="w-8 h-8 text-gray-500"></i>
+  </div>
+</div>
+
 
             <div class="flex flex-wrap gap-2">
               ${(editor.tags || []).slice(0, 10).map(tag => `
@@ -876,15 +886,6 @@
 
             <p class="text-gray-400 line-clamp-2">${escapeHtml(editor.bio || "")}</p>
 
-            <div class="grid grid-cols-3 gap-3 pt-2">
-              ${[1,2,3].map(() => `
-                <div class="aspect-video rounded-lg overflow-hidden bg-gray-800">
-                  <div class="w-full h-full flex items-center justify-center bg-gray-700">
-                    <i data-lucide="video" class="w-6 h-6 text-gray-400"></i>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
 
             <div class="flex gap-3 pt-4">
               <button type="button" onclick="passEditor('${editor.id}')" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
@@ -1069,13 +1070,6 @@
           ${escapeHtml(s)}
         </span>
       `).join('');
-
-      document.getElementById('fullProfileClips').innerHTML = (editor?.clips || [1,2,3,4]).map(() => `
-        <div class="aspect-video rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center">
-          <i data-lucide="video" class="w-8 h-8 text-gray-500"></i>
-        </div>
-      `).join('');
-
       showScreen('full-profile');
     }
 
