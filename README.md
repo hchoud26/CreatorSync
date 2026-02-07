@@ -2,17 +2,12 @@
 
 **Created by Ariana Garcia Villalba, Ushnah Hussain, and Haya Choudhary**
 
-AI-powered matching platform connecting Twitch streamers with video editors through bias-free, work-first discovery.
-
----
-
-## Special Shoutout 🎉
-A huge thank you to **Aedify AI** for sponsoring this hackathon and providing the AI embedding technology that powers our semantic matching system!
+A digital matching platform connecting content creators with video editors through bias-free, work-first discovery.
 
 ---
 
 ## What does our app do?
-CreatorSync matches Twitch streamers with video editors based on creative compatibility—not follower count, appearance, or popularity. Editors upload sample clips anonymously, and AI suggests the best matches to creators looking for collaborators.
+CreatorSync matches Twitch streamers with video editors based on creative compatibility—not follower count, appearance, or popularity. Editors upload sample clips anonymously, and our app suggests the best matches to creators looking for collaborators.
 
 ---
 
@@ -33,7 +28,6 @@ CreatorSync matches Twitch streamers with video editors based on creative compat
 
 ## Why is it useful?
 - **Fair Discovery:** Work speaks first—no bias based on identity or popularity
-- **Smart Matching:** AI understands creative style beyond simple tags
 - **Mutual Opt-In:** Both parties must accept before identities are revealed
 - **Long-term Partnerships:** Focus on compatibility over transactional work
 - **Emerging Creator Focused:** Levels the playing field for small streamers and new editors
@@ -79,7 +73,7 @@ We noticed that finding creative collaborators in the streaming space is incredi
    - Create a `.env` file in the `backend/` folder
    - Add:
      ```
-     PORT=3000
+     PORT=5000
      AEDIFY_API_KEY=your_key_from_sponsor
      ```
 
@@ -87,14 +81,14 @@ We noticed that finding creative collaborators in the streaming space is incredi
    ```bash
    npm start
    ```
-   - Server runs at `http://localhost:3000`
+   - Server runs at `http://localhost:5000`
 
 5. **Open the Frontend**
    - Option A: Right-click `frontend/index.html` → Open with Live Server (VS Code)
    - Option B: Open `frontend/index.html` directly in browser
 
 6. **Test the App**
-   - Visit `http://localhost:3000/api/test` to verify backend
+   - Visit `http://localhost:5000/api/test` to verify backend
    - Frontend should load at `http://localhost:5500` (or your server port)
 
 ---
@@ -109,10 +103,6 @@ We noticed that finding creative collaborators in the streaming space is incredi
 - Node.js + Express.js (API server)
 - SQLite (database)
 - CORS (cross-origin support)
-
-**AI Integration:**
-- Aedify AI (text embeddings & semantic matching)
-- Cosine similarity algorithm (matching scores)
 
 **Tools:**
 - Git/GitHub (version control)
@@ -154,7 +144,6 @@ CreatorSync/
 ## Key Features
 
 ✅ **Anonymous Clip Discovery** - Editors upload 3-5 sample clips without revealing identity  
-✅ **AI-Powered Ranking** - Aedify suggests best-matching clips for each creator  
 ✅ **Like/Pass System** - Tinder-style browsing for editor clips  
 ✅ **Two-Stage Matching** - Both parties must accept before identities revealed  
 ✅ **Built-in Chat** - Direct messaging after successful match  
@@ -169,19 +158,11 @@ CreatorSync/
 - We needed to hide all identifying information until BOTH parties agreed
 - Solution: Multi-stage data reveal (clip → bio → full identity)
 
-**2. Integrating Aedify AI**
-- First time using embeddings and semantic matching
-- Solution: Built a fallback tag-based system that works even if AI fails
-
-**3. Building a Fair Matching Algorithm**
-- How do we pick 1 clip from an editor's 3-5 samples?
-- Solution: AI ranks clips by similarity to creator preferences
-
-**4. Backend-Frontend Connection**
+**2. Backend-Frontend Connection**
 - CORS errors and API configuration issues
 - Solution: Proper middleware setup and environment variables
 
-**5. SQLite Database Design**
+**3. SQLite Database Design**
 - Modeling the two-sided matching flow in SQL
 - Solution: Status-based match lifecycle (liked → accepted → confirmed)
 
@@ -212,7 +193,6 @@ CreatorSync/
 **AI Magic Behind the Scenes:**
 - When creators browse, AI picks the BEST 1 clip from each editor
 - Uses semantic understanding: "fast-paced Minecraft chaos" matches better than just "Minecraft"
-- Falls back to tag matching if AI is unavailable
 
 ---
 
