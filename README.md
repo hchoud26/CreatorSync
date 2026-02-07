@@ -120,7 +120,7 @@ We noticed that finding creative collaborators in the streaming space is incredi
 - VS Code (development)
 - Postman (API testing)
 
----
+```text
 CreatorSync/
 ├── authentication-node-.../   # Auth module
 ├── backend/
@@ -129,7 +129,7 @@ CreatorSync/
 │   │   └── package.json       # Data module config
 │   ├── database/              # SQLite setup
 │   ├── routes/                # API endpoints
-│   │   ├── auth.js             # Authentication routes
+│   │   ├── auth.js             # Authentication
 │   │   ├── chat.js             # Chat functionality
 │   │   ├── creators.js         # Creator endpoints
 │   │   ├── editors.js          # Editor endpoints
@@ -149,7 +149,7 @@ CreatorSync/
 │   ├── index.html              # Main app interface
 │   └── .gitkeep
 └── .gitignore
----
+
 
 ## Key Features
 
