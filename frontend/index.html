@@ -1,1122 +1,1218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CreatorSync - Streamer ↔ Editor Matching</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/lucide@latest/dist/lucide.min.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #ffffff; min-height: 100vh; }
-        
-        /* Screen System */
-        .screen { display: none; min-height: 100vh; padding-top: 80px; }
-        .screen.active { display: block; }
-        
-        /* Gradient Effects */
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
-        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        
-        /* Glassmorphism */
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .glass-hover:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); }
-        
-        /* Animations */
-        @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-100px); } }
-        @keyframes matchPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(102, 126, 234, 0); } }
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
-        @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
-        
-        .card-enter { animation: slideIn 0.4s ease-out forwards; }
-        .card-pass { animation: slideOut 0.3s ease-in forwards; }
-        .match-pulse { animation: matchPulse 2s infinite; }
-        .floating { animation: float 3s ease-in-out infinite; }
-        
-        /* Confetti */
-        .confetti { position: fixed; width: 10px; height: 10px; pointer-events: none; z-index: 9999; }
-        
-        /* Tag States */
-        .tag { transition: all 0.2s ease; }
-        .tag.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-color: transparent; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
-        
-        /* Buttons */
-        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: all 0.2s ease; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
-        .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.2s ease; }
-        .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); }
-        .btn-success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); transition: all 0.2s ease; }
-        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(86, 171, 47, 0.4); }
-        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); transition: all 0.2s ease; }
-        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(235, 51, 73, 0.4); }
-        
-        /* Toast */
-        .toast-container { position: fixed; top: 100px; right: 20px; z-index: 9999; pointer-events: none; }
-        .toast { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 16px 24px; border-radius: 12px; margin-bottom: 10px; transform: translateX(100%); transition: transform 0.3s ease; }
-        .toast.show { transform: translateX(0); }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0a0a0f; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; }
-        
-        /* Chat */
-        .chat-message { max-width: 70%; word-wrap: break-word; }
-        .chat-message.sent { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .chat-message.received { background: rgba(255, 255, 255, 0.1); }
-        
-        /* Status Badges */
-        .badge-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
-        .badge-accepted { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
-        .badge-passed { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
-        .badge-matched { background: rgba(132, 204, 22, 0.2); color: #84cc16; border: 1px solid rgba(132, 204, 22, 0.4); }
-        
-        /* Clip Card */
-        .clip-thumbnail { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CreatorSync - Streamer ↔ Editor Matching</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/lucide@latest/dist/lucide.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #ffffff; min-height: 100vh; }
+
+    /* Screen System */
+    .screen { display: none; min-height: 100vh; padding-top: 80px; }
+    .screen.active { display: block; }
+
+    /* Gradient Effects */
+    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
+    .gradient-text { background: linear-gradient(135deg, #667eea 0%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* Glassmorphism */
+    .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-hover:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); }
+
+    /* Animations */
+    @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-100px); } }
+    @keyframes matchPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(102, 126, 234, 0); } }
+    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+    @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+    .card-enter { animation: slideIn 0.4s ease-out forwards; }
+    .card-pass { animation: slideOut 0.3s ease-in forwards; }
+    .match-pulse { animation: matchPulse 2s infinite; }
+    .floating { animation: float 3s ease-in-out infinite; }
+
+    /* Confetti */
+    .confetti { position: fixed; width: 10px; height: 10px; pointer-events: none; z-index: 9999; }
+
+    /* Tag States */
+    .tag { transition: all 0.2s ease; }
+    .tag.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-color: transparent; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+
+    /* Buttons */
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: all 0.2s ease; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.2s ease; }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); }
+    .btn-success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); transition: all 0.2s ease; }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(86, 171, 47, 0.4); }
+    .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); transition: all 0.2s ease; }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(235, 51, 73, 0.4); }
+
+    /* Toast */
+    .toast-container { position: fixed; top: 100px; right: 20px; z-index: 9999; pointer-events: none; }
+    .toast { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 16px 24px; border-radius: 12px; margin-bottom: 10px; transform: translateX(100%); transition: transform 0.3s ease; }
+    .toast.show { transform: translateX(0); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0a0a0f; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; }
+
+    /* Chat */
+    .chat-message { max-width: 70%; word-wrap: break-word; }
+    .chat-message.sent { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .chat-message.received { background: rgba(255, 255, 255, 0.1); }
+
+    /* Status Badges */
+    .badge-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
+    .badge-accepted { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-passed { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .badge-matched { background: rgba(132, 204, 22, 0.2); color: #84cc16; border: 1px solid rgba(132, 204, 22, 0.4); }
+
+    /* Clip Card */
+    .clip-thumbnail { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+  </style>
 </head>
+
 <body>
-    <nav class="fixed top-0 left-0 right-0 z-50 glass">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <button type="button" onclick="showScreen('role-select')" class="flex items-center space-x-2 hover:opacity-80 transition">
-                    <i data-lucide="zap" class="w-8 h-8 text-purple-400"></i>
-                    <span class="text-xl font-bold gradient-text">CreatorSync</span>
-                </button>
-                
-                <div class="flex items-center space-x-1">
-                    <button type="button" onclick="showScreen('creator-feed')" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
-                        <i data-lucide="compass" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Creator Feed</span>
-                    </button>
-                    <button type="button" onclick="showScreen('creator-requests-sent')" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
-                        <i data-lucide="send" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Creator Sent</span>
-                    </button>
-                    <button type="button" onclick="showScreen('editor-requests')" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
-                        <i data-lucide="inbox" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Editor Requests</span>
-                    </button>
-                    <button type="button" onclick="showScreen('role-select')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Switch Role</span>
-                    </button>
-                </div>
-            </div>
+  <nav class="fixed top-0 left-0 right-0 z-50 glass">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <button type="button" onclick="showScreen('role-select')" class="flex items-center space-x-2 hover:opacity-80 transition">
+          <i data-lucide="zap" class="w-8 h-8 text-purple-400"></i>
+          <span class="text-xl font-bold gradient-text">CreatorSync</span>
+        </button>
+
+        <div class="flex items-center space-x-1">
+          <button type="button" onclick="showScreen('creator-feed')" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
+            <i data-lucide="compass" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Creator Feed</span>
+          </button>
+          <button type="button" onclick="showScreen('creator-requests-sent')" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Creator Sent</span>
+          </button>
+          <button type="button" onclick="showScreen('editor-requests')" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
+            <i data-lucide="inbox" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Editor Requests</span>
+          </button>
+          <button type="button" onclick="showScreen('role-select')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Switch Role</span>
+          </button>
         </div>
-    </nav>
+      </div>
+    </div>
+  </nav>
 
-    <div class="toast-container" id="toastContainer"></div>
+  <div class="toast-container" id="toastContainer"></div>
 
-    <section id="role-select" class="screen active">
-        <div class="min-h-screen flex items-center justify-center p-4">
-            <div class="max-w-4xl w-full">
-                <div class="text-center mb-16">
-                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl gradient-bg mb-6 floating">
-                        <i data-lucide="zap" class="w-10 h-10 text-white"></i>
-                    </div>
-                    <h1 class="text-5xl md:text-7xl font-bold mb-4 gradient-text">CreatorSync</h1>
-                    <p class="text-xl text-gray-400">Match the perfect streamer with their ideal editor</p>
-                </div>
-                
-                <div class="grid md:grid-cols-2 gap-8">
-                    <button type="button" onclick="selectRole('creator')" class="glass glass-hover rounded-3xl p-8 text-left transition-all duration-300 group">
-                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                            <i data-lucide="video" class="w-8 h-8 text-white"></i>
-                        </div>
-                        <h2 class="text-3xl font-bold mb-3">I'm a Streamer</h2>
-                        <p class="text-gray-400 mb-6">Find talented editors who understand your content and can elevate your streams to the next level.</p>
-                        <div class="flex items-center text-purple-400 font-medium">
-                            <span>Get started</span>
-                            <i data-lucide="arrow-right" class="w-5 h-5 ml-2 group-hover:translate-x-2 transition"></i>
-                        </div>
-                    </button>
-                    
-                    <button type="button" onclick="selectRole('editor')" class="glass glass-hover rounded-3xl p-8 text-left transition-all duration-300 group">
-                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                            <i data-lucide="scissors" class="w-8 h-8 text-white"></i>
-                        </div>
-                        <h2 class="text-3xl font-bold mb-3">I'm an Editor</h2>
-                        <p class="text-gray-400 mb-6">Showcase your editing skills and connect with streamers who need your creative expertise.</p>
-                        <div class="flex items-center text-cyan-400 font-medium">
-                            <span>Join as Editor</span>
-                            <i data-lucide="arrow-right" class="w-5 h-5 ml-2 group-hover:translate-x-2 transition"></i>
-                        </div>
-                    </button>
-                </div>
-            </div>
+  <!-- ==================== ROLE SELECT ==================== -->
+  <section id="role-select" class="screen active">
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <div class="max-w-4xl w-full">
+        <div class="text-center mb-16">
+          <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl gradient-bg mb-6 floating">
+            <i data-lucide="zap" class="w-10 h-10 text-white"></i>
+          </div>
+          <h1 class="text-5xl md:text-7xl font-bold mb-4 gradient-text">CreatorSync</h1>
+          <p class="text-xl text-gray-400">Match the perfect streamer with their ideal editor</p>
         </div>
-    </section>
 
-    <section id="editor-onboarding" class="screen">
-        <div class="min-h-screen flex items-center justify-center p-4 py-12">
-            <div class="max-w-2xl w-full">
-                <div class="text-center mb-10">
-                    <h2 class="text-4xl font-bold mb-3">Create Your Editor Profile</h2>
-                    <p class="text-gray-400">Set up your showcase to attract the perfect streamer matches</p>
-                </div>
-                
-                <div class="glass rounded-3xl p-8 space-y-8">
-                    <div class="space-y-4">
-                        <label class="block text-lg font-semibold">Showcase Your Work</label>
-                        <div class="border-2 border-dashed border-gray-600 rounded-2xl p-8 text-center hover:border-purple-500 transition cursor-pointer" onclick="simulateUpload()">
-                            <i data-lucide="upload-cloud" class="w-12 h-12 mx-auto mb-4 text-gray-500"></i>
-                            <p class="text-gray-400">Drag & drop your best clips or click to browse</p>
-                            <p class="text-sm text-gray-500 mt-2">Upload 3-5 clips that showcase your editing style</p>
-                        </div>
-                        <div id="clipPreview" class="grid grid-cols-3 gap-4 hidden">
-                            <div class="aspect-video rounded-lg clip-thumbnail flex items-center justify-center">
-                                <i data-lucide="play" class="w-8 h-8 text-gray-400"></i>
-                            </div>
-                            <div class="aspect-video rounded-lg clip-thumbnail flex items-center justify-center">
-                                <i data-lucide="play" class="w-8 h-8 text-gray-400"></i>
-                            </div>
-                            <div class="aspect-video rounded-lg clip-thumbnail flex items-center justify-center">
-                                <i data-lucide="play" class="w-8 h-8 text-gray-400"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <label class="block text-lg font-semibold">Content Types You Edit</label>
-                        <div class="flex flex-wrap gap-3" id="contentTypeTags">
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Minecraft">Minecraft</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="IRL">IRL</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Politics">Politics</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Gaming">Gaming</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Just Chatting">Just Chatting</button>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <label class="block text-lg font-semibold">Your Editing Style</label>
-                        <div class="flex flex-wrap gap-3" id="styleTags">
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Fast-Paced">Fast-Paced</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Cinematic">Cinematic</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Meme Edits">Meme Edits</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Subtitles">Subtitles</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Motion Graphics">Motion Graphics</button>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <label class="block text-lg font-semibold">Bio <span class="text-gray-500 font-normal">(Optional)</span></label>
-                        <textarea id="editorBio" rows="3" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Tell streamers about your editing philosophy..."></textarea>
-                    </div>
-                    
-                    <button type="button" onclick="completeEditorOnboarding()" class="w-full btn-primary py-4 rounded-xl font-semibold text-lg flex items-center justify-center space-x-2">
-                        <span>Complete Profile</span>
-                        <i data-lucide="check-circle" class="w-5 h-5"></i>
-                    </button>
-                </div>
+        <div class="grid md:grid-cols-2 gap-8">
+          <button type="button" onclick="selectRole('creator')" class="glass glass-hover rounded-3xl p-8 text-left transition-all duration-300 group">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6 group-hover:scale-110 transition">
+              <i data-lucide="video" class="w-8 h-8 text-white"></i>
             </div>
+            <h2 class="text-3xl font-bold mb-3">I'm a Streamer</h2>
+            <p class="text-gray-400 mb-6">Find talented editors who understand your content and can elevate your streams.</p>
+            <div class="flex items-center text-purple-400 font-medium">
+              <span>Get started</span>
+              <i data-lucide="arrow-right" class="w-5 h-5 ml-2 group-hover:translate-x-2 transition"></i>
+            </div>
+          </button>
+
+          <button type="button" onclick="selectRole('editor')" class="glass glass-hover rounded-3xl p-8 text-left transition-all duration-300 group">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mb-6 group-hover:scale-110 transition">
+              <i data-lucide="scissors" class="w-8 h-8 text-white"></i>
+            </div>
+            <h2 class="text-3xl font-bold mb-3">I'm an Editor</h2>
+            <p class="text-gray-400 mb-6">Showcase your editing skills and connect with streamers who need you.</p>
+            <div class="flex items-center text-cyan-400 font-medium">
+              <span>Join as Editor</span>
+              <i data-lucide="arrow-right" class="w-5 h-5 ml-2 group-hover:translate-x-2 transition"></i>
+            </div>
+          </button>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <section id="creator-bio" class="screen">
-        <div class="min-h-screen flex items-center justify-center p-4 py-12">
-            <div class="max-w-2xl w-full">
-                <div class="text-center mb-10">
-                    <h2 class="text-4xl font-bold mb-3">Tell Us About Your Stream</h2>
-                    <p class="text-gray-400">Help us find the perfect editor for your content</p>
-                </div>
-                
-                <div class="glass rounded-3xl p-8 space-y-6">
-                    <div class="space-y-2">
-                        <label class="block text-lg font-semibold">Your Display Name</label>
-                        <input type="text" id="creatorName" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="How should editors know you?">
-                    </div>
-                    
-                    <div class="space-y-2">
-                        <label class="block text-lg font-semibold">Who are you?</label>
-                        <textarea id="whoAreYou" rows="2" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Brief intro about yourself..."></textarea>
-                    </div>
-                    
-                    <div class="space-y-2">
-                        <label class="block text-lg font-semibold">What do you stream?</label>
-                        <textarea id="whatStream" rows="2" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Describe your content and streaming style..."></textarea>
-                    </div>
-                    
-                    <div class="space-y-2">
-                        <label class="block text-lg font-semibold">What do you want in an editor?</label>
-                        <textarea id="wantEditor" rows="2" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Your vision for edited content..."></textarea>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <label class="block text-lg font-semibold">Your Content Type</label>
-                        <div class="flex flex-wrap gap-3" id="creatorContentType">
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Minecraft">Minecraft</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="IRL">IRL</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Politics">Politics</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Gaming">Gaming</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Just Chatting">Just Chatting</button>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <label class="block text-lg font-semibold">Preferred Editing Styles</label>
-                        <div class="flex flex-wrap gap-3" id="creatorStyleTags">
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Fast-Paced">Fast-Paced</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Cinematic">Cinematic</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Meme Edits">Meme Edits</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Subtitles">Subtitles</button>
-                            <button type="button" class="tag glass px-4 py-2 rounded-full text-sm font-medium" data-tag="Motion Graphics">Motion Graphics</button>
-                        </div>
-                    </div>
-                    
-                    <button type="button" onclick="completeCreatorBio()" class="w-full btn-primary py-4 rounded-xl font-semibold text-lg flex items-center justify-center space-x-2">
-                        <span>Start Discovering Editors</span>
-                        <i data-lucide="sparkles" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
+  <!-- ==================== EDITOR ONBOARDING ==================== -->
+  <section id="editor-onboarding" class="screen">
+    <div class="min-h-screen flex items-center justify-center p-4 py-12">
+      <div class="max-w-2xl w-full">
+        <div class="text-center mb-10">
+          <h2 class="text-4xl font-bold mb-3">Create Your Editor Profile</h2>
+          <p class="text-gray-400">Set up your showcase to attract perfect streamer matches</p>
         </div>
-    </section>
 
-    <section id="creator-feed" class="screen">
-        <div class="min-h-screen flex items-center justify-center p-4">
-            <div class="max-w-lg w-full">
-                <div id="feedContainer" class="space-y-6">
-                    </div>
-                <div id="feedEmpty" class="hidden text-center glass rounded-3xl p-12">
-                    <i data-lucide="search" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
-                    <h3 class="text-2xl font-bold mb-2">No More Editors</h3>
-                    <p class="text-gray-400 mb-6">Check back later or view your sent requests</p>
-                    <button type="button" onclick="showScreen('creator-requests-sent')" class="btn-primary px-8 py-3 rounded-xl font-medium">
-                        View Sent Requests
-                    </button>
-                </div>
+        <div class="glass rounded-3xl p-8 space-y-8">
+          <div class="space-y-4">
+            <label class="block text-lg font-semibold">Showcase Your Work</label>
+            <div class="border-2 border-dashed border-gray-600 rounded-2xl p-8 text-center hover:border-purple-500 transition cursor-pointer" onclick="simulateUpload()">
+              <i data-lucide="upload-cloud" class="w-12 h-12 mx-auto mb-4 text-gray-500"></i>
+              <p class="text-gray-400">Drag & drop your best clips or click to browse</p>
+              <p class="text-sm text-gray-500 mt-2">Upload 3-5 clips that showcase your editing style</p>
             </div>
+            <div id="clipPreview" class="grid grid-cols-3 gap-4 hidden">
+              <div class="aspect-video rounded-lg clip-thumbnail flex items-center justify-center">
+                <i data-lucide="play" class="w-8 h-8 text-gray-400"></i>
+              </div>
+              <div class="aspect-video rounded-lg clip-thumbnail flex items-center justify-center">
+                <i data-lucide="play" class="w-8 h-8 text-gray-400"></i>
+              </div>
+              <div class="aspect-video rounded-lg clip-thumbnail flex items-center justify-center">
+                <i data-lucide="play" class="w-8 h-8 text-gray-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- ✅ Searchable Content Types (Editor) -->
+          <div class="space-y-4">
+            <label class="block text-lg font-semibold">Content Types You Edit</label>
+            <div class="relative">
+              <input id="contentTypeInput" type="text"
+                class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition"
+                placeholder="Type to search (Minecraft, IRL, Valorant, Just Chatting...)"
+                autocomplete="off" />
+              <div id="contentTypeDropdown" class="absolute z-50 mt-2 w-full glass rounded-2xl p-2 hidden max-h-56 overflow-y-auto"></div>
+            </div>
+            <div class="flex flex-wrap gap-3" id="contentTypeSelected"></div>
+            <p class="text-sm text-gray-500">Click options to add. Press Enter to add a custom tag.</p>
+          </div>
+
+          <!-- ✅ Searchable Styles (Editor) -->
+          <div class="space-y-4">
+            <label class="block text-lg font-semibold">Your Editing Style</label>
+            <div class="relative">
+              <input id="styleInput" type="text"
+                class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition"
+                placeholder="Type to search (Fast-Paced, Cinematic, Subtitles...)"
+                autocomplete="off" />
+              <div id="styleDropdown" class="absolute z-50 mt-2 w-full glass rounded-2xl p-2 hidden max-h-56 overflow-y-auto"></div>
+            </div>
+            <div class="flex flex-wrap gap-3" id="styleSelected"></div>
+            <p class="text-sm text-gray-500">Select multiple styles. Press Enter to add a custom style.</p>
+          </div>
+
+          <div class="space-y-4">
+            <label class="block text-lg font-semibold">Bio <span class="text-gray-500 font-normal">(Optional)</span></label>
+            <textarea id="editorBio" rows="3" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Tell streamers about your editing philosophy..."></textarea>
+          </div>
+
+          <button type="button" onclick="completeEditorOnboarding()" class="w-full btn-primary py-4 rounded-xl font-semibold text-lg flex items-center justify-center space-x-2">
+            <span>Complete Profile</span>
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+          </button>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <section id="creator-requests-sent" class="screen">
-        <div class="min-h-screen p-4 py-12">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-4xl font-bold mb-8 text-center">Your Sent Requests</h2>
-                <div id="sentRequestsList" class="grid gap-4">
-                    </div>
-                <div id="sentRequestsEmpty" class="hidden text-center glass rounded-3xl p-12">
-                    <i data-lucide="send" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
-                    <h3 class="text-2xl font-bold mb-2">No Requests Yet</h3>
-                    <p class="text-gray-400 mb-6">Start browsing editors to send requests</p>
-                    <button type="button" onclick="showScreen('creator-feed')" class="btn-primary px-8 py-3 rounded-xl font-medium">
-                        Browse Editors
-                    </button>
-                </div>
-            </div>
+  <!-- ==================== CREATOR BIO ==================== -->
+  <section id="creator-bio" class="screen">
+    <div class="min-h-screen flex items-center justify-center p-4 py-12">
+      <div class="max-w-2xl w-full">
+        <div class="text-center mb-10">
+          <h2 class="text-4xl font-bold mb-3">Tell Us About Your Stream</h2>
+          <p class="text-gray-400">Help us find the perfect editor for your content</p>
         </div>
-    </section>
 
-    <section id="editor-requests" class="screen">
-        <div class="min-h-screen p-4 py-12">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-4xl font-bold mb-8 text-center">Incoming Requests</h2>
-                <div id="editorRequestsList" class="grid gap-4">
-                    </div>
-                <div id="editorRequestsEmpty" class="hidden text-center glass rounded-3xl p-12">
-                    <i data-lucide="inbox" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
-                    <h3 class="text-2xl font-bold mb-2">No Incoming Requests</h3>
-                    <p class="text-gray-400">Creators will appear here when they send you requests</p>
-                </div>
+        <div class="glass rounded-3xl p-8 space-y-6">
+          <div class="space-y-2">
+            <label class="block text-lg font-semibold">Your Display Name</label>
+            <input type="text" id="creatorName" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="How should editors know you?">
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-lg font-semibold">Who are you?</label>
+            <textarea id="whoAreYou" rows="2" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Brief intro about yourself..."></textarea>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-lg font-semibold">What do you stream?</label>
+            <textarea id="whatStream" rows="2" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Describe your content and streaming style..."></textarea>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-lg font-semibold">What do you want in an editor?</label>
+            <textarea id="wantEditor" rows="2" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Your vision for edited content..."></textarea>
+          </div>
+
+          <!-- ✅ Searchable Creator Content Type (single-select) -->
+          <div class="space-y-4">
+            <label class="block text-lg font-semibold">Your Content Type</label>
+            <div class="relative">
+              <input id="creatorContentTypeInput" type="text"
+                class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition"
+                placeholder="Type to search (e.g., Minecraft, IRL, Just Chatting, Valorant...)"
+                autocomplete="off" />
+              <div id="creatorContentTypeDropdown" class="absolute z-50 mt-2 w-full glass rounded-2xl p-2 hidden max-h-56 overflow-y-auto"></div>
             </div>
+            <div class="flex flex-wrap gap-3" id="creatorContentTypeSelected"></div>
+            <p class="text-sm text-gray-500">Pick 1 content type. Press Enter to set a custom one.</p>
+          </div>
+
+          <!-- ✅ Searchable Creator Styles (multi-select) -->
+          <div class="space-y-4">
+            <label class="block text-lg font-semibold">Preferred Editing Styles</label>
+            <div class="relative">
+              <input id="creatorStyleInput" type="text"
+                class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition"
+                placeholder="Type to search (Fast-Paced, Cinematic, Subtitles...)"
+                autocomplete="off" />
+              <div id="creatorStyleDropdown" class="absolute z-50 mt-2 w-full glass rounded-2xl p-2 hidden max-h-56 overflow-y-auto"></div>
+            </div>
+            <div class="flex flex-wrap gap-3" id="creatorStyleSelected"></div>
+            <p class="text-sm text-gray-500">Select multiple styles. Press Enter to add a custom style.</p>
+          </div>
+
+          <button type="button" onclick="completeCreatorBio()" class="w-full btn-primary py-4 rounded-xl font-semibold text-lg flex items-center justify-center space-x-2">
+            <span>Start Discovering Editors</span>
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </button>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <section id="full-profile" class="screen">
-        <div class="min-h-screen p-4 py-12">
-            <div class="max-w-4xl mx-auto">
-                <button type="button" onclick="showScreen('editor-requests')" class="btn-secondary px-6 py-3 rounded-xl font-medium flex items-center space-x-2 mb-6">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                    <span>Back to Requests</span>
-                </button>
-                
-                <div class="glass rounded-3xl p-8 space-y-8">
-                    <div class="flex items-start gap-6">
-                        <div class="w-24 h-24 rounded-2xl gradient-bg flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="user" class="w-12 h-12 text-white"></i>
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="text-gray-500 text-sm uppercase tracking-wider">Anonymous Creator</span>
-                                <span id="fullProfileStatus" class="badge-pending px-3 py-1 rounded-full text-xs font-medium">Pending</span>
-                            </div>
-                            <h2 id="fullProfileName" class="text-3xl font-bold mb-4">Creator Name Hidden</h2>
-                            <div id="fullProfileTags" class="flex flex-wrap gap-2">
-                                </div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="space-y-3">
-                            <h3 class="text-lg font-semibold">About</h3>
-                            <p id="fullProfileBio" class="text-gray-400 leading-relaxed"></p>
-                        </div>
-                        <div class="space-y-3">
-                            <h3 class="text-lg font-semibold">What They Stream</h3>
-                            <p id="fullProfileStream" class="text-gray-400 leading-relaxed"></p>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-3">
-                        <h3 class="text-lg font-semibold">What They Want</h3>
-                        <p id="fullProfileWant" class="text-gray-400 leading-relaxed"></p>
-                    </div>
-                    
-                    <div class="space-y-3">
-                        <h3 class="text-lg font-semibold">Preferred Styles</h3>
-                        <div id="fullProfileStyles" class="flex flex-wrap gap-2">
-                            </div>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-semibold">Editor's Work Samples</h3>
-                        <div id="fullProfileClips" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            </div>
-                    </div>
-                    
-                    <div class="flex gap-4 pt-4">
-                        <button type="button" id="passProfileBtn" onclick="passFromProfile()" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
-                            <i data-lucide="x" class="w-5 h-5"></i>
-                            <span>Pass</span>
-                        </button>
-                        <button type="button" id="acceptProfileBtn" onclick="finalAccept()" class="flex-1 btn-success py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
-                            <i data-lucide="check" class="w-5 h-5"></i>
-                            <span>Final Accept</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
+  <!-- ==================== CREATOR FEED ==================== -->
+  <section id="creator-feed" class="screen">
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <div class="max-w-lg w-full">
+        <div id="feedContainer" class="space-y-6"></div>
+        <div id="feedEmpty" class="hidden text-center glass rounded-3xl p-12">
+          <i data-lucide="search" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
+          <h3 class="text-2xl font-bold mb-2">No More Editors</h3>
+          <p class="text-gray-400 mb-6">Check back later or view your sent requests</p>
+          <button type="button" onclick="showScreen('creator-requests-sent')" class="btn-primary px-8 py-3 rounded-xl font-medium">
+            View Sent Requests
+          </button>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <section id="match-success" class="screen">
-        <div id="confettiContainer"></div>
-        <div class="min-h-screen flex items-center justify-center p-4">
-            <div class="max-w-lg w-full text-center">
-                <div class="glass rounded-3xl p-12 match-pulse">
-                    <div class="w-32 h-32 mx-auto mb-8 rounded-full gradient-bg flex items-center justify-center">
-                        <i data-lucide="heart" class="w-16 h-16 text-white"></i>
-                    </div>
-                    
-                    <h2 class="text-5xl font-bold mb-4">It's a Match! 🎉</h2>
-                    <p class="text-gray-400 mb-8">You've found your perfect editing partner</p>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-8">
-                        <div class="glass rounded-2xl p-6">
-                            <div class="w-16 h-16 rounded-full gradient-bg mx-auto mb-4 flex items-center justify-center">
-                                <i data-lucide="video" class="w-8 h-8 text-white"></i>
-                            </div>
-                            <p class="text-sm text-gray-500 mb-1">Streamer</p>
-                            <p id="matchCreatorName" class="text-lg font-bold">@StreamerName</p>
-                        </div>
-                        <div class="glass rounded-2xl p-6">
-                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 mx-auto mb-4 flex items-center justify-center">
-                                <i data-lucide="scissors" class="w-8 h-8 text-white"></i>
-                            </div>
-                            <p class="text-sm text-gray-500 mb-1">Editor</p>
-                            <p id="matchEditorName" class="text-lg font-bold">EditorName</p>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-3">
-                        <button type="button" onclick="showScreen('chat')" class="w-full btn-primary py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
-                            <i data-lucide="message-circle" class="w-5 h-5"></i>
-                            <span>Start Conversation</span>
-                        </button>
-                        <button type="button" onclick="showScreen('editor-requests')" class="w-full btn-secondary py-4 rounded-xl font-medium">
-                            Back to Requests
-                        </button>
-                    </div>
-                </div>
-            </div>
+  <!-- ==================== CREATOR REQUESTS SENT ==================== -->
+  <section id="creator-requests-sent" class="screen">
+    <div class="min-h-screen p-4 py-12">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-4xl font-bold mb-8 text-center">Your Sent Requests</h2>
+        <div id="sentRequestsList" class="grid gap-4"></div>
+        <div id="sentRequestsEmpty" class="hidden text-center glass rounded-3xl p-12">
+          <i data-lucide="send" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
+          <h3 class="text-2xl font-bold mb-2">No Requests Yet</h3>
+          <p class="text-gray-400 mb-6">Start browsing editors to send requests</p>
+          <button type="button" onclick="showScreen('creator-feed')" class="btn-primary px-8 py-3 rounded-xl font-medium">
+            Browse Editors
+          </button>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <section id="chat" class="screen">
-        <div class="min-h-screen flex flex-col max-w-4xl mx-auto p-4">
-            <div class="glass rounded-t-2xl p-4 flex items-center justify-between">
-                <button type="button" onclick="showScreen('match-success')" class="btn-secondary px-4 py-2 rounded-lg flex items-center space-x-2">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                    <span>Back</span>
-                </button>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center">
-                        <span id="chatPartnerInitial" class="font-bold">S</span>
-                    </div>
-                    <div>
-                        <p id="chatPartnerName" class="font-semibold">Chat Partner</p>
-                        <p class="text-xs text-green-400">● Online</p>
-                    </div>
-                </div>
-                <div class="w-24"></div>
-            </div>
-            
-            <div id="chatMessages" class="flex-1 glass border-t-0 border-b-0 overflow-y-auto p-4 space-y-4 min-h-[400px] max-h-[600px]">
-                </div>
-            
-            <div class="glass rounded-b-2xl p-4 flex gap-3">
-                <input type="text" id="chatInput" class="flex-1 bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendMessage()">
-                <button type="button" onclick="sendMessage()" class="btn-primary px-6 rounded-xl flex items-center justify-center">
-                    <i data-lucide="send" class="w-5 h-5"></i>
-                </button>
-            </div>
+  <!-- ==================== EDITOR REQUESTS ==================== -->
+  <section id="editor-requests" class="screen">
+    <div class="min-h-screen p-4 py-12">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-4xl font-bold mb-8 text-center">Incoming Requests</h2>
+        <div id="editorRequestsList" class="grid gap-4"></div>
+        <div id="editorRequestsEmpty" class="hidden text-center glass rounded-3xl p-12">
+          <i data-lucide="inbox" class="w-16 h-16 mx-auto mb-4 text-gray-500"></i>
+          <h3 class="text-2xl font-bold mb-2">No Incoming Requests</h3>
+          <p class="text-gray-400">Creators will appear here when they send you requests</p>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <script>
-        // ==================== STATE MANAGEMENT ====================
-        
-        let state = {
-            editors: [], // Will be populated from Backend
-            creators: [],
-            requests: [],
-            currentCreatorId: null,
-            currentEditorId: 'editor1', // Default editor
-            feedIndex: 0,
-            currentMatch: null
-        };
+  <!-- ==================== FULL PROFILE ==================== -->
+  <section id="full-profile" class="screen">
+    <div class="min-h-screen p-4 py-12">
+      <div class="max-w-4xl mx-auto">
+        <button type="button" onclick="showScreen('editor-requests')" class="btn-secondary px-6 py-3 rounded-xl font-medium flex items-center space-x-2 mb-6">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+          <span>Back to Requests</span>
+        </button>
 
-        // ==================== SAMPLE CREATORS ====================
-        
-        const sampleCreators = [
-            {
-                id: 'creator1',
-                displayName: 'DiamondMiner42',
-                bio: 'Minecraft speedrunner and challenge creator. Love making epic moments even more epic!',
-                whatStream: 'Minecraft speedruns, parkour challenges, and building competitions',
-                wantEditor: 'Someone who can capture the hype moments and add funny meme inserts',
-                contentType: 'Minecraft',
-                preferredStyles: ['Fast-Paced', 'Meme Edits']
-            },
-            {
-                id: 'creator2',
-                displayName: 'IRLExplorer',
-                bio: 'Travel vlogger and adventure seeker. Always on the move!',
-                whatStream: 'Travel streams, food adventures, and spontaneous city explorations',
-                wantEditor: 'Cinematic storytelling that makes viewers feel like theyre there',
-                contentType: 'IRL',
-                preferredStyles: ['Cinematic', 'Motion Graphics']
-            },
-            {
-                id: 'creator3',
-                displayName: 'HeadshotHero',
-                bio: 'Competitive FPS player with a passion for tactical gameplay.',
-                whatStream: 'Valorant, CS2, and other tactical shooters with educational commentary',
-                wantEditor: 'Fast-paced highlight reels with clean subtitles for callouts',
-                contentType: 'Gaming',
-                preferredStyles: ['Fast-Paced', 'Subtitles']
-            }
+        <div class="glass rounded-3xl p-8 space-y-8">
+          <div class="flex items-start gap-6">
+            <div class="w-24 h-24 rounded-2xl gradient-bg flex items-center justify-center flex-shrink-0">
+              <i data-lucide="user" class="w-12 h-12 text-white"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-gray-500 text-sm uppercase tracking-wider">Anonymous Creator</span>
+                <span id="fullProfileStatus" class="badge-pending px-3 py-1 rounded-full text-xs font-medium">Pending</span>
+              </div>
+              <h2 id="fullProfileName" class="text-3xl font-bold mb-4">Creator Name Hidden</h2>
+              <div id="fullProfileTags" class="flex flex-wrap gap-2"></div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <h3 class="text-lg font-semibold">About</h3>
+              <p id="fullProfileBio" class="text-gray-400 leading-relaxed"></p>
+            </div>
+            <div class="space-y-3">
+              <h3 class="text-lg font-semibold">What They Stream</h3>
+              <p id="fullProfileStream" class="text-gray-400 leading-relaxed"></p>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="text-lg font-semibold">What They Want</h3>
+            <p id="fullProfileWant" class="text-gray-400 leading-relaxed"></p>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="text-lg font-semibold">Preferred Styles</h3>
+            <div id="fullProfileStyles" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Editor's Work Samples</h3>
+            <div id="fullProfileClips" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+          </div>
+
+          <div class="flex gap-4 pt-4">
+            <button type="button" id="passProfileBtn" onclick="passFromProfile()" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
+              <i data-lucide="x" class="w-5 h-5"></i>
+              <span>Pass</span>
+            </button>
+            <button type="button" id="acceptProfileBtn" onclick="finalAccept()" class="flex-1 btn-success py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
+              <i data-lucide="check" class="w-5 h-5"></i>
+              <span>Final Accept</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== MATCH SUCCESS ==================== -->
+  <section id="match-success" class="screen">
+    <div id="confettiContainer"></div>
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <div class="max-w-lg w-full text-center">
+        <div class="glass rounded-3xl p-12 match-pulse">
+          <div class="w-32 h-32 mx-auto mb-8 rounded-full gradient-bg flex items-center justify-center">
+            <i data-lucide="heart" class="w-16 h-16 text-white"></i>
+          </div>
+
+          <h2 class="text-5xl font-bold mb-4">It's a Match! 🎉</h2>
+          <p class="text-gray-400 mb-8">You've found your perfect editing partner</p>
+
+          <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="glass rounded-2xl p-6">
+              <div class="w-16 h-16 rounded-full gradient-bg mx-auto mb-4 flex items-center justify-center">
+                <i data-lucide="video" class="w-8 h-8 text-white"></i>
+              </div>
+              <p class="text-sm text-gray-500 mb-1">Streamer</p>
+              <p id="matchCreatorName" class="text-lg font-bold">@StreamerName</p>
+            </div>
+            <div class="glass rounded-2xl p-6">
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 mx-auto mb-4 flex items-center justify-center">
+                <i data-lucide="scissors" class="w-8 h-8 text-white"></i>
+              </div>
+              <p class="text-sm text-gray-500 mb-1">Editor</p>
+              <p id="matchEditorName" class="text-lg font-bold">EditorName</p>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <button type="button" onclick="showScreen('chat')" class="w-full btn-primary py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
+              <i data-lucide="message-circle" class="w-5 h-5"></i>
+              <span>Start Conversation</span>
+            </button>
+            <button type="button" onclick="showScreen('editor-requests')" class="w-full btn-secondary py-4 rounded-xl font-medium">
+              Back to Requests
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== CHAT ==================== -->
+  <section id="chat" class="screen">
+    <div class="min-h-screen flex flex-col max-w-4xl mx-auto p-4">
+      <div class="glass rounded-t-2xl p-4 flex items-center justify-between">
+        <button type="button" onclick="showScreen('match-success')" class="btn-secondary px-4 py-2 rounded-lg flex items-center space-x-2">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <span>Back</span>
+        </button>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center">
+            <span id="chatPartnerInitial" class="font-bold">S</span>
+          </div>
+          <div>
+            <p id="chatPartnerName" class="font-semibold">Chat Partner</p>
+            <p class="text-xs text-green-400">● Online</p>
+          </div>
+        </div>
+        <div class="w-24"></div>
+      </div>
+
+      <div id="chatMessages" class="flex-1 glass border-t-0 border-b-0 overflow-y-auto p-4 space-y-4 min-h-[400px] max-h-[600px]"></div>
+
+      <div class="glass rounded-b-2xl p-4 flex gap-3">
+        <input type="text" id="chatInput" class="flex-1 bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendMessage()">
+        <button type="button" onclick="sendMessage()" class="btn-primary px-6 rounded-xl flex items-center justify-center">
+          <i data-lucide="send" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // ==================== STATE ====================
+    let state = {
+      editors: [],
+      creators: [],
+      requests: [],
+      currentCreatorId: null,
+      currentEditorId: 'editor_demo',
+      feedIndex: 0,
+      currentMatch: null
+    };
+
+    // ==================== OPTIONS (bigger lists feel "AI") ====================
+    const CONTENT_TYPE_OPTIONS = [
+      "Minecraft","Valorant","Fortnite","Apex Legends","League of Legends","Overwatch 2",
+      "IRL","Just Chatting","Politics","Gaming","Art","Music","VTuber","Roleplay","Speedrunning",
+      "Horror","Cozy Games","Competitive","Educational","Podcasts","React Content","Clips Farming",
+      "Variety","Interview","Sports Talk","Cooking","Travel","Fitness","Storytime"
+    ];
+
+    const STYLE_OPTIONS = [
+      "Fast-Paced","Cinematic","Meme Edits","Subtitles","Motion Graphics","Color Grading",
+      "Sound Design","Zoom Cuts","TikTok Style","YouTube Shorts","Montage","Storytelling",
+      "Minimalist","High Energy","Lo-fi Chill","Caption Burn-in","Anime-style Overlays",
+      "Glitch Effects","Beat Sync","B-Roll Heavy","Clean UI","Streamer Highlights"
+    ];
+
+    // ==================== TAG PICKER HELPERS ====================
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function makeChip(label, onRemove) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tag active glass px-4 py-2 rounded-full text-sm font-medium";
+      btn.innerHTML = `${escapeHtml(label)} <span class="opacity-70 ml-1">✕</span>`;
+      btn.addEventListener("click", onRemove);
+      return btn;
+    }
+
+    function setupTagPicker({ inputId, dropdownId, selectedWrapId, options }) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      const selectedWrap = document.getElementById(selectedWrapId);
+
+      let selected = [];
+
+      function renderSelected() {
+        selectedWrap.innerHTML = "";
+        selected.forEach(tag => {
+          selectedWrap.appendChild(makeChip(tag, () => {
+            selected = selected.filter(x => x !== tag);
+            renderSelected();
+          }));
+        });
+      }
+
+      function filterOptions(q) {
+        const query = q.trim().toLowerCase();
+        if (!query) return options.slice(0, 10);
+        return options.filter(o => o.toLowerCase().includes(query)).slice(0, 12);
+      }
+
+      function renderDropdown(list) {
+        const q = input.value.trim();
+        if (!list.length) {
+          dropdown.innerHTML = `<div class="px-4 py-3 text-gray-400 text-sm">No matches. Press Enter to add “${escapeHtml(q)}”</div>`;
+          dropdown.classList.remove("hidden");
+          return;
+        }
+
+        dropdown.innerHTML = list.map(tag => `
+          <button type="button"
+            class="w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition"
+            data-value="${escapeHtml(tag)}"
+          >
+            <span class="font-medium">${escapeHtml(tag)}</span>
+            ${selected.includes(tag) ? `<span class="text-xs text-gray-400 ml-2">(added)</span>` : ``}
+          </button>
+        `).join("");
+
+        dropdown.classList.remove("hidden");
+
+        dropdown.querySelectorAll("button").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const val = btn.dataset.value;
+            if (!selected.includes(val)) selected.push(val);
+            input.value = "";
+            dropdown.classList.add("hidden");
+            renderSelected();
+          });
+        });
+      }
+
+      input.addEventListener("input", () => renderDropdown(filterOptions(input.value)));
+      input.addEventListener("focus", () => renderDropdown(filterOptions(input.value)));
+
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const val = input.value.trim();
+          if (!val) return;
+          if (!selected.includes(val)) selected.push(val);
+          input.value = "";
+          dropdown.classList.add("hidden");
+          renderSelected();
+        }
+        if (e.key === "Escape") dropdown.classList.add("hidden");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!dropdown.contains(e.target) && e.target !== input) dropdown.classList.add("hidden");
+      });
+
+      return {
+        getSelected: () => selected.slice(),
+        setSelected: (arr) => { selected = (arr || []).slice(); renderSelected(); }
+      };
+    }
+
+    function setupSingleTagPicker({ inputId, dropdownId, selectedWrapId, options }) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      const selectedWrap = document.getElementById(selectedWrapId);
+
+      let selected = null;
+
+      function renderSelected() {
+        selectedWrap.innerHTML = "";
+        if (!selected) return;
+        selectedWrap.appendChild(makeChip(selected, () => {
+          selected = null;
+          renderSelected();
+        }));
+      }
+
+      function filterOptions(q) {
+        const query = q.trim().toLowerCase();
+        if (!query) return options.slice(0, 10);
+        return options.filter(o => o.toLowerCase().includes(query)).slice(0, 12);
+      }
+
+      function renderDropdown(list) {
+        const q = input.value.trim();
+        if (!list.length) {
+          dropdown.innerHTML = `<div class="px-4 py-3 text-gray-400 text-sm">No matches. Press Enter to set “${escapeHtml(q)}”</div>`;
+          dropdown.classList.remove("hidden");
+          return;
+        }
+
+        dropdown.innerHTML = list.map(tag => `
+          <button type="button"
+            class="w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition"
+            data-value="${escapeHtml(tag)}"
+          >
+            <span class="font-medium">${escapeHtml(tag)}</span>
+            ${selected === tag ? `<span class="text-xs text-gray-400 ml-2">(selected)</span>` : ``}
+          </button>
+        `).join("");
+
+        dropdown.classList.remove("hidden");
+
+        dropdown.querySelectorAll("button").forEach(btn => {
+          btn.addEventListener("click", () => {
+            selected = btn.dataset.value;
+            input.value = "";
+            dropdown.classList.add("hidden");
+            renderSelected();
+          });
+        });
+      }
+
+      input.addEventListener("input", () => renderDropdown(filterOptions(input.value)));
+      input.addEventListener("focus", () => renderDropdown(filterOptions(input.value)));
+
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const val = input.value.trim();
+          if (!val) return;
+          selected = val;
+          input.value = "";
+          dropdown.classList.add("hidden");
+          renderSelected();
+        }
+        if (e.key === "Escape") dropdown.classList.add("hidden");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!dropdown.contains(e.target) && e.target !== input) dropdown.classList.add("hidden");
+      });
+
+      return {
+        getSelected: () => selected,
+        setSelected: (val) => { selected = val || null; renderSelected(); }
+      };
+    }
+
+    // ==================== PICKERS ====================
+    let editorContentTypePicker, editorStylePicker;
+    let creatorContentTypePicker, creatorStylePicker;
+
+    // ==================== DEMO EDITORS ====================
+    function seedDemoEditors() {
+      state.editors = [
+        {
+          id: "editor_demo",
+          anonymousName: "Anonymous Editor A",
+          realName: "AlexEditor",
+          bio: "Fast-paced meme cuts + captions built for clips and shorts. Beat-sync, zoom cuts, viral pacing.",
+          tags: ["Minecraft","Fast-Paced","Meme Edits","Subtitles","YouTube Shorts","Clips Farming"],
+          thumbnail: "https://via.placeholder.com/900x500.png?text=Editor+Clip+Preview",
+          clips: [1,2,3]
+        },
+        {
+          id: "editor_demo2",
+          anonymousName: "Anonymous Editor B",
+          realName: "SamEdits",
+          bio: "Cinematic IRL storyteller: color grading, sound design, motion graphics, B-roll heavy edits.",
+          tags: ["IRL","Cinematic","Motion Graphics","Color Grading","Sound Design","Storytelling"],
+          thumbnail: "https://via.placeholder.com/900x500.png?text=Cinematic+Preview",
+          clips: [1,2,3]
+        }
+      ];
+    }
+
+    // ==================== NAVIGATION ====================
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+      const target = document.getElementById(id);
+      if (target) {
+        target.classList.add('active');
+        window.scrollTo(0, 0);
+      }
+      updateScreenUI(id);
+      lucide.createIcons();
+    }
+
+    function updateScreenUI(screenId) {
+      if (screenId === 'creator-feed') renderFeed();
+      if (screenId === 'creator-requests-sent') renderSentRequests();
+      if (screenId === 'editor-requests') renderEditorRequests();
+    }
+
+    // ==================== TOAST ====================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.style.borderLeft = `4px solid ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#a855f7'}`;
+      toast.innerHTML = `<div class="flex items-center gap-3"><span class="font-medium">${escapeHtml(message)}</span></div>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // ==================== ROLE SELECTION ====================
+    function selectRole(role) {
+      if (role === 'editor') showScreen('editor-onboarding');
+      else showScreen('creator-bio');
+    }
+
+    // ==================== EDITOR ONBOARDING ====================
+    function simulateUpload() {
+      document.getElementById('clipPreview').classList.remove('hidden');
+      showToast('Clips uploaded successfully!', 'success');
+    }
+
+    function completeEditorOnboarding() {
+      const contentTypes = editorContentTypePicker.getSelected();
+      const styles = editorStylePicker.getSelected();
+      const bio = document.getElementById('editorBio').value.trim();
+
+      if (contentTypes.length === 0 || styles.length === 0) {
+        showToast('Please select at least one content type and style', 'error');
+        return;
+      }
+
+      // Update "current editor" profile for demo
+      const editor = state.editors.find(e => e.id === state.currentEditorId);
+      if (editor) {
+        editor.tags = [...contentTypes, ...styles];
+        if (bio) editor.bio = bio;
+      }
+
+      showToast('Editor profile completed!', 'success');
+      showScreen('editor-requests');
+    }
+
+    // ==================== CREATOR BIO ====================
+    function completeCreatorBio() {
+      const name = document.getElementById('creatorName').value.trim();
+      const whoAreYou = document.getElementById('whoAreYou').value.trim();
+      const whatStream = document.getElementById('whatStream').value.trim();
+      const wantEditor = document.getElementById('wantEditor').value.trim();
+
+      const contentType = creatorContentTypePicker.getSelected();
+      const styles = creatorStylePicker.getSelected();
+
+      if (!name || !whoAreYou || !whatStream || !wantEditor || !contentType) {
+        showToast('Please fill in all fields + pick a content type', 'error');
+        return;
+      }
+
+      const creatorId = 'creator_' + Date.now();
+      state.currentCreatorId = creatorId;
+
+      state.creators.push({
+        id: creatorId,
+        displayName: name,
+        bio: whoAreYou,
+        whatStream,
+        wantEditor,
+        contentType,
+        preferredStyles: styles
+      });
+
+      state.feedIndex = 0;
+      showToast('Profile created! Finding editors...', 'success');
+      showScreen('creator-feed');
+    }
+
+    // ==================== FEED (simple demo matching: show best-tagged editor first) ====================
+    function scoreEditorForCreator(editor, creator) {
+      const eTags = (editor.tags || []).map(x => x.toLowerCase());
+      let score = 0;
+      if (eTags.includes(creator.contentType.toLowerCase())) score += 5;
+      (creator.preferredStyles || []).forEach(s => { if (eTags.includes(s.toLowerCase())) score += 2; });
+      return score;
+    }
+
+    function getSortedEditorsForCreator() {
+      const creator = state.creators.find(c => c.id === state.currentCreatorId);
+      if (!creator) return state.editors;
+
+      return state.editors
+        .map(e => ({ ...e, _score: scoreEditorForCreator(e, creator) }))
+        .sort((a,b) => b._score - a._score);
+    }
+
+    function renderFeed() {
+      const container = document.getElementById('feedContainer');
+      const empty = document.getElementById('feedEmpty');
+
+      const available = getSortedEditorsForCreator();
+
+      if (state.feedIndex >= available.length || available.length === 0) {
+        container.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      const editor = available[state.feedIndex];
+
+      container.innerHTML = `
+        <div class="glass rounded-3xl overflow-hidden card-enter" id="feedCard">
+          <div class="aspect-video clip-thumbnail flex items-center justify-center relative group">
+            <img src="${editor.thumbnail}" class="absolute inset-0 w-full h-full object-cover" alt="Editor clip">
+            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+              <i data-lucide="play-circle" class="w-16 h-16 text-white"></i>
+            </div>
+          </div>
+
+          <div class="p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-xl font-bold">${escapeHtml(editor.anonymousName)}</h3>
+                <p class="text-gray-400 text-sm">Professional Video Editor</p>
+              </div>
+              <div class="w-12 h-12 rounded-full gradient-bg flex items-center justify-center">
+                <i data-lucide="user" class="w-6 h-6 text-white"></i>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              ${(editor.tags || []).slice(0, 10).map(tag => `
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  ${escapeHtml(tag)}
+                </span>
+              `).join('')}
+            </div>
+
+            <p class="text-gray-400 line-clamp-2">${escapeHtml(editor.bio || "")}</p>
+
+            <div class="grid grid-cols-3 gap-3 pt-2">
+              ${[1,2,3].map(() => `
+                <div class="aspect-video rounded-lg overflow-hidden bg-gray-800">
+                  <div class="w-full h-full flex items-center justify-center bg-gray-700">
+                    <i data-lucide="video" class="w-6 h-6 text-gray-400"></i>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="flex gap-3 pt-4">
+              <button type="button" onclick="passEditor('${editor.id}')" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
+                <i data-lucide="x" class="w-5 h-5"></i>
+                <span>Pass</span>
+              </button>
+              <button type="button" onclick="likeEditor('${editor.id}')" class="flex-1 btn-success py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
+                <i data-lucide="heart" class="w-5 h-5"></i>
+                <span>Like</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    function passEditor(editorId) {
+      const card = document.getElementById('feedCard');
+      if (card) card.classList.add('card-pass');
+      setTimeout(() => { state.feedIndex++; renderFeed(); }, 300);
+    }
+
+    function likeEditor(editorId) {
+      state.requests.push({
+        requestId: 'req_' + Date.now(),
+        editorId,
+        creatorId: state.currentCreatorId,
+        status: 'pending'
+      });
+
+      showToast('Request sent!', 'success');
+
+      const card = document.getElementById('feedCard');
+      if (card) card.style.animation = 'none';
+
+      setTimeout(() => { state.feedIndex++; renderFeed(); }, 450);
+    }
+
+    // ==================== CREATOR REQUESTS SENT ====================
+    function renderSentRequests() {
+      const list = document.getElementById('sentRequestsList');
+      const empty = document.getElementById('sentRequestsEmpty');
+
+      const myRequests = state.requests.filter(r => r.creatorId === state.currentCreatorId);
+
+      if (myRequests.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+
+      list.innerHTML = myRequests.map(req => {
+        const editor = state.editors.find(e => e.id === req.editorId);
+        const statusClass = `badge-${req.status}`;
+        const statusText = req.status.charAt(0).toUpperCase() + req.status.slice(1);
+
+        return `
+          <div class="glass rounded-2xl p-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-xl gradient-bg flex items-center justify-center">
+                <i data-lucide="user" class="w-7 h-7 text-white"></i>
+              </div>
+              <div>
+                <h3 class="font-bold">${escapeHtml(editor?.anonymousName || 'Unknown Editor')}</h3>
+                <div class="flex flex-wrap gap-1 mt-1 text-xs text-gray-400">
+                  ${(editor?.tags || []).slice(0, 4).map(t => escapeHtml(t)).join(' • ')}
+                </div>
+              </div>
+            </div>
+            <span class="${statusClass} px-4 py-2 rounded-full text-sm font-medium">
+              ${escapeHtml(statusText)}
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // ==================== EDITOR REQUESTS (inbox) ====================
+    function renderEditorRequests() {
+      const list = document.getElementById('editorRequestsList');
+      const empty = document.getElementById('editorRequestsEmpty');
+
+      const pendingRequests = state.requests.filter(r =>
+        r.editorId === state.currentEditorId &&
+        (r.status === 'pending' || r.status === 'accepted')
+      );
+
+      if (pendingRequests.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+
+      list.innerHTML = pendingRequests.map(req => {
+        const creator = state.creators.find(c => c.id === req.creatorId);
+
+        return `
+          <div class="glass rounded-2xl p-6">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <span class="text-gray-500 text-sm uppercase tracking-wider">Anonymous Creator</span>
+                <h3 class="text-xl font-bold mt-1">Creator Name Hidden</h3>
+              </div>
+              <span class="badge-pending px-3 py-1 rounded-full text-xs font-medium">Pending Review</span>
+            </div>
+
+            <div class="space-y-3 mb-6">
+              <div>
+                <p class="text-sm text-gray-500 mb-1">Content Type</p>
+                <p class="font-medium">${escapeHtml(creator?.contentType || 'Unknown')}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500 mb-1">Bio Snippet</p>
+                <p class="text-gray-400 line-clamp-2">${escapeHtml(creator?.bio || 'No bio available')}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500 mb-1">Preferred Styles</p>
+                <div class="flex flex-wrap gap-2">
+                  ${(creator?.preferredStyles || []).slice(0, 6).map(s => `
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      ${escapeHtml(s)}
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3">
+              <button type="button" onclick="passRequest('${req.requestId}')" class="flex-1 btn-danger py-3 rounded-xl font-medium flex items-center justify-center space-x-2">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                <span>Pass</span>
+              </button>
+              <button type="button" onclick="viewFullProfile('${req.requestId}')" class="flex-1 btn-primary py-3 rounded-xl font-medium flex items-center justify-center space-x-2">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+                <span>View Full Profile</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function passRequest(requestId) {
+      const req = state.requests.find(r => r.requestId === requestId);
+      if (req) req.status = 'passed';
+      showToast('Request passed', 'info');
+      renderEditorRequests();
+    }
+
+    // ==================== FULL PROFILE ====================
+    let currentProfileRequest = null;
+
+    function viewFullProfile(requestId) {
+      currentProfileRequest = state.requests.find(r => r.requestId === requestId);
+      if (!currentProfileRequest) return;
+
+      const creator = state.creators.find(c => c.id === currentProfileRequest.creatorId);
+      const editor = state.editors.find(e => e.id === state.currentEditorId);
+
+      document.getElementById('fullProfileBio').textContent = creator?.bio || '';
+      document.getElementById('fullProfileStream').textContent = creator?.whatStream || '';
+      document.getElementById('fullProfileWant').textContent = creator?.wantEditor || '';
+
+      document.getElementById('fullProfileTags').innerHTML = `
+        <span class="px-4 py-2 rounded-full text-sm font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
+          ${escapeHtml(creator?.contentType || 'Unknown')}
+        </span>
+      `;
+
+      document.getElementById('fullProfileStyles').innerHTML = (creator?.preferredStyles || []).map(s => `
+        <span class="px-4 py-2 rounded-full text-sm font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+          ${escapeHtml(s)}
+        </span>
+      `).join('');
+
+      document.getElementById('fullProfileClips').innerHTML = (editor?.clips || [1,2,3,4]).map(() => `
+        <div class="aspect-video rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center">
+          <i data-lucide="video" class="w-8 h-8 text-gray-500"></i>
+        </div>
+      `).join('');
+
+      showScreen('full-profile');
+    }
+
+    function passFromProfile() {
+      if (currentProfileRequest) {
+        passRequest(currentProfileRequest.requestId);
+        showScreen('editor-requests');
+      }
+    }
+
+    function finalAccept() {
+      if (!currentProfileRequest) return;
+
+      currentProfileRequest.status = 'matched';
+      state.currentMatch = {
+        creatorId: currentProfileRequest.creatorId,
+        editorId: currentProfileRequest.editorId
+      };
+
+      const creator = state.creators.find(c => c.id === currentProfileRequest.creatorId);
+      const editor = state.editors.find(e => e.id === currentProfileRequest.editorId);
+
+      document.getElementById('matchCreatorName').textContent = '@' + (creator?.displayName || 'Unknown');
+      document.getElementById('matchEditorName').textContent = editor?.realName || 'Unknown';
+
+      showConfetti();
+      showScreen('match-success');
+      showToast("It's a match! 🎉", 'success');
+
+      // Prep chat header
+      document.getElementById('chatPartnerName').textContent = editor?.realName || 'Editor';
+      document.getElementById('chatPartnerInitial').textContent = (editor?.realName || 'E').slice(0,1).toUpperCase();
+    }
+
+    // ==================== CONFETTI ====================
+    function showConfetti() {
+      const container = document.getElementById('confettiContainer');
+      container.innerHTML = '';
+      const colors = ['#667eea', '#764ba2', '#f093fb', '#4ade80', '#fbbf24'];
+
+      for (let i = 0; i < 100; i++) {
+        const conf = document.createElement('div');
+        conf.className = 'confetti';
+        conf.style.left = Math.random() * 100 + 'vw';
+        conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        conf.style.animation = `confetti-fall ${2 + Math.random() * 2}s linear forwards`;
+        conf.style.animationDelay = Math.random() * 2 + 's';
+        container.appendChild(conf);
+      }
+
+      setTimeout(() => container.innerHTML = '', 5000);
+    }
+
+    // ==================== CHAT ====================
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('chatMessages');
+
+      container.innerHTML += `
+        <div class="flex justify-end mb-4">
+          <div class="chat-message sent px-4 py-3 rounded-2xl rounded-tr-sm">
+            <p>${escapeHtml(text)}</p>
+          </div>
+        </div>
+      `;
+
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
+
+      setTimeout(() => {
+        const replies = [
+          "Hey! Excited to work with you! 🎬",
+          "Your content looks amazing — I already have edit ideas 👀",
+          "Down to do a quick test edit first?",
+          "What’s your upload schedule like? Weekly / shorts daily?",
+          "Do you want meme-heavy or cinematic vibes?"
         ];
 
-        // ==================== BACKEND CONNECTION ====================
+        const reply = replies[Math.floor(Math.random() * replies.length)];
+        container.innerHTML += `
+          <div class="flex justify-start mb-4">
+            <div class="chat-message received px-4 py-3 rounded-2xl rounded-tl-sm">
+              <p>${escapeHtml(reply)}</p>
+            </div>
+          </div>
+        `;
+        container.scrollTop = container.scrollHeight;
+      }, 1200);
+    }
 
-        async function loadLiveData() {
-            try {
-                console.log("⏳ Fetching data from Port 5000...");
-                const response = await fetch('http://localhost:5000/api/twitch/clips');
-                const clips = await response.json();
+    // ==================== INIT ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      seedDemoEditors();
 
-                console.log("✅ Data received:", clips);
+      // Editor pickers
+      editorContentTypePicker = setupTagPicker({
+        inputId: "contentTypeInput",
+        dropdownId: "contentTypeDropdown",
+        selectedWrapId: "contentTypeSelected",
+        options: CONTENT_TYPE_OPTIONS
+      });
 
-                // TRANSFORM: Convert Backend Clips into Frontend "Editors"
-                state.editors = clips.map((clip, index) => ({
-                    id: clip.id,
-                    anonymousName: `Editor #${index + 1}`,
-                    realName: clip.creator_name, // The actual clipper's name
-                    bio: clip.title, // Use the Clip Title as their "Bio"
-                    tags: ['Gaming', 'Clips', clip.language || 'EN'], // Generate tags
-                    // Use real thumbnail or placeholder
-                    thumbnail: clip.thumbnail_url || "https://via.placeholder.com/640x360",
-                    clips: [1, 2, 3] // Dummy sub-clips for layout
-                }));
+      editorStylePicker = setupTagPicker({
+        inputId: "styleInput",
+        dropdownId: "styleDropdown",
+        selectedWrapId: "styleSelected",
+        options: STYLE_OPTIONS
+      });
 
-                // Reset feed to start
-                state.feedIndex = 0;
-                renderFeed();
-                showToast('Connected to Backend!', 'success');
+      // Creator pickers
+      creatorContentTypePicker = setupSingleTagPicker({
+        inputId: "creatorContentTypeInput",
+        dropdownId: "creatorContentTypeDropdown",
+        selectedWrapId: "creatorContentTypeSelected",
+        options: CONTENT_TYPE_OPTIONS
+      });
 
-            } catch (error) {
-                console.error("❌ Backend Error:", error);
-                showToast('Backend offline', 'error');
-            }
-        }
+      creatorStylePicker = setupTagPicker({
+        inputId: "creatorStyleInput",
+        dropdownId: "creatorStyleDropdown",
+        selectedWrapId: "creatorStyleSelected",
+        options: STYLE_OPTIONS
+      });
 
-        // ==================== NAVIGATION ====================
-        
-        function showScreen(id) {
-            console.log("Navigating to:", id);
-            
-            // Hide all screens
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            
-            // Show target screen
-            const target = document.getElementById(id);
-            if (target) {
-                target.classList.add('active');
-                window.scrollTo(0, 0);
-            }
-            
-            // Update UI based on screen
-            updateScreenUI(id);
-            
-            // Re-initialize icons
-            lucide.createIcons();
-        }
+      // Demo defaults (feel "AI ready")
+      editorContentTypePicker.setSelected(["Minecraft","Just Chatting"]);
+      editorStylePicker.setSelected(["Fast-Paced","Meme Edits","Subtitles","YouTube Shorts"]);
 
-        function updateScreenUI(screenId) {
-            switch(screenId) {
-                case 'creator-feed':
-                    renderFeed();
-                    break;
-                case 'creator-requests-sent':
-                    renderSentRequests();
-                    break;
-                case 'editor-requests':
-                    renderEditorRequests();
-                    break;
-            }
-        }
+      creatorContentTypePicker.setSelected("Minecraft");
+      creatorStylePicker.setSelected(["Fast-Paced","Meme Edits"]);
 
-        // ==================== TOAST NOTIFICATIONS ====================
-        
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            
-            const colors = {
-                info: 'border-purple-500/50',
-                success: 'border-green-500/50',
-                error: 'border-red-500/50'
-            };
-            
-            toast.style.borderLeft = `4px solid ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#a855f7'}`;
-            toast.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <span class="font-medium">${message}</span>
-                </div>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // ==================== ROLE SELECTION ====================
-        
-        function selectRole(role) {
-            console.log("Role selected:", role);
-            
-            if (role === 'editor') {
-                showScreen('editor-onboarding');
-            } else {
-                showScreen('creator-bio');
-            }
-        }
-
-        // ==================== TAG SYSTEM ====================
-        
-        function initializeTags() {
-            document.querySelectorAll('.tag').forEach(tag => {
-                tag.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                });
-            });
-        }
-
-        // ==================== EDITOR ONBOARDING ====================
-        
-        function simulateUpload() {
-            document.getElementById('clipPreview').classList.remove('hidden');
-            showToast('Clips uploaded successfully!', 'success');
-        }
-
-        function completeEditorOnboarding() {
-            console.log("Completing editor onboarding");
-            
-            const contentTypes = Array.from(document.querySelectorAll('#contentTypeTags .tag.active')).map(t => t.dataset.tag);
-            const styles = Array.from(document.querySelectorAll('#styleTags .tag.active')).map(t => t.dataset.tag);
-            const bio = document.getElementById('editorBio').value;
-            
-            if (contentTypes.length === 0 || styles.length === 0) {
-                showToast('Please select at least one content type and style', 'error');
-                return;
-            }
-            
-            // Update current editor
-            const editor = state.editors.find(e => e.id === state.currentEditorId);
-            if (editor) {
-                editor.tags = [...contentTypes, ...styles];
-                editor.bio = bio;
-            }
-            
-            // Add sample requests for demo
-            addSampleRequests();
-            
-            showToast('Profile completed!', 'success');
-            showScreen('editor-requests');
-        }
-
-        function addSampleRequests() {
-            // Add some sample requests for the editor to see
-            sampleCreators.forEach((creator, index) => {
-                if (!state.creators.find(c => c.id === creator.id)) {
-                    state.creators.push({...creator});
-                }
-                
-                state.requests.push({
-                    requestId: `req_${Date.now()}_${index}`,
-                    editorId: state.currentEditorId,
-                    creatorId: creator.id,
-                    status: 'pending'
-                });
-            });
-        }
-
-        // ==================== CREATOR BIO ====================
-        
-        function completeCreatorBio() {
-            console.log("Completing creator bio");
-            
-            const name = document.getElementById('creatorName').value;
-            const whoAreYou = document.getElementById('whoAreYou').value;
-            const whatStream = document.getElementById('whatStream').value;
-            const wantEditor = document.getElementById('wantEditor').value;
-            const contentType = document.querySelector('#creatorContentType .tag.active')?.dataset.tag;
-            const styles = Array.from(document.querySelectorAll('#creatorStyleTags .tag.active')).map(t => t.dataset.tag);
-            
-            if (!name || !whoAreYou || !whatStream || !wantEditor || !contentType) {
-                showToast('Please fill in all fields', 'error');
-                return;
-            }
-            
-            const creatorId = 'creator_' + Date.now();
-            state.currentCreatorId = creatorId;
-            
-            state.creators.push({
-                id: creatorId,
-                displayName: name,
-                bio: whoAreYou,
-                whatStream: whatStream,
-                wantEditor: wantEditor,
-                contentType: contentType,
-                preferredStyles: styles
-            });
-            
-            state.feedIndex = 0;
-            
-            showToast('Profile created! Finding editors...', 'success');
-            showScreen('creator-feed');
-        }
-
-        // ==================== CREATOR FEED ====================
-        
-        function renderFeed() {
-            const container = document.getElementById('feedContainer');
-            const empty = document.getElementById('feedEmpty');
-            
-            // In the "Real Data" version, we show all editors fetched from backend
-            // (Simplifying curation logic for the demo)
-            const available = state.editors;
-            
-            if (state.feedIndex >= available.length || available.length === 0) {
-                container.innerHTML = '';
-                empty.classList.remove('hidden');
-                return;
-            }
-            
-            empty.classList.add('hidden');
-            const editor = available[state.feedIndex];
-            
-            container.innerHTML = `
-                <div class="glass rounded-3xl overflow-hidden card-enter" id="feedCard">
-                    <div class="aspect-video clip-thumbnail flex items-center justify-center relative group">
-                        <img src="${editor.thumbnail}" 
-                             class="absolute inset-0 w-full h-full object-cover" 
-                             alt="Editor clip">
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                            <i data-lucide="play-circle" class="w-16 h-16 text-white"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="p-6 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-xl font-bold">${editor.anonymousName}</h3>
-                                <p class="text-gray-400 text-sm">Professional Video Editor</p>
-                            </div>
-                            <div class="w-12 h-12 rounded-full gradient-bg flex items-center justify-center">
-                                <i data-lucide="user" class="w-6 h-6 text-white"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="flex flex-wrap gap-2">
-                            ${editor.tags.map(tag => `
-                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                                    ${tag}
-                                </span>
-                            `).join('')}
-                        </div>
-                        
-                        <p class="text-gray-400 line-clamp-2">${editor.bio}</p>
-                        
-                        <div class="grid grid-cols-3 gap-3 pt-2">
-                            ${editor.clips.map((_, i) => `
-                                <div class="aspect-video rounded-lg overflow-hidden bg-gray-800">
-                                    <div class="w-full h-full flex items-center justify-center bg-gray-700">
-                                         <i data-lucide="video" class="w-6 h-6 text-gray-400"></i>
-                                    </div>
-                                </div>
-                            `).slice(0, 3).join('')}
-                        </div>
-                        
-                        <div class="flex gap-3 pt-4">
-                            <button type="button" onclick="passEditor('${editor.id}')" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
-                                <i data-lucide="x" class="w-5 h-5"></i>
-                                <span>Pass</span>
-                            </button>
-                            <button type="button" onclick="likeEditor('${editor.id}')" class="flex-1 btn-success py-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
-                                <i data-lucide="heart" class="w-5 h-5"></i>
-                                <span>Like</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            lucide.createIcons();
-        }
-
-        function passEditor(editorId) {
-            console.log("Passing editor:", editorId);
-            
-            const card = document.getElementById('feedCard');
-            card.classList.add('card-pass');
-            
-            setTimeout(() => {
-                state.feedIndex++;
-                renderFeed();
-            }, 300);
-        }
-
-        function likeEditor(editorId) {
-            console.log("Liking editor:", editorId);
-            
-            // Create request
-            state.requests.push({
-                requestId: 'req_' + Date.now(),
-                editorId: editorId,
-                creatorId: state.currentCreatorId,
-                status: 'pending'
-            });
-            
-            showToast('Request sent!', 'success');
-            
-            const card = document.getElementById('feedCard');
-            card.style.animation = 'none';
-            
-            setTimeout(() => {
-                state.feedIndex++;
-                renderFeed();
-            }, 500);
-        }
-
-        // ==================== CREATOR REQUESTS SENT ====================
-        
-        function renderSentRequests() {
-            const list = document.getElementById('sentRequestsList');
-            const empty = document.getElementById('sentRequestsEmpty');
-            
-            const myRequests = state.requests.filter(r => r.creatorId === state.currentCreatorId);
-            
-            if (myRequests.length === 0) {
-                list.innerHTML = '';
-                empty.classList.remove('hidden');
-                return;
-            }
-            
-            empty.classList.add('hidden');
-            
-            list.innerHTML = myRequests.map(req => {
-                const editor = state.editors.find(e => e.id === req.editorId);
-                const statusClass = `badge-${req.status}`;
-                const statusText = req.status.charAt(0).toUpperCase() + req.status.slice(1);
-                
-                return `
-                    <div class="glass rounded-2xl p-6 flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 rounded-xl gradient-bg flex items-center justify-center">
-                                <i data-lucide="user" class="w-7 h-7 text-white"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold">${editor?.anonymousName || 'Unknown Editor'}</h3>
-                                <div class="flex flex-wrap gap-1 mt-1">
-                                    ${editor?.tags.slice(0, 3).map(t => `
-                                        <span class="text-xs text-gray-400">${t}</span>
-                                    `).join(' • ') || ''}
-                                </div>
-                            </div>
-                        </div>
-                        <span class="${statusClass} px-4 py-2 rounded-full text-sm font-medium">
-                            ${statusText}
-                        </span>
-                    </div>
-                `;
-            }).join('');
-            
-            lucide.createIcons();
-        }
-
-        // ==================== EDITOR REQUESTS ====================
-        
-        function renderEditorRequests() {
-            const list = document.getElementById('editorRequestsList');
-            const empty = document.getElementById('editorRequestsEmpty');
-            
-            const pendingRequests = state.requests.filter(r => 
-                r.editorId === state.currentEditorId && 
-                (r.status === 'pending' || r.status === 'accepted')
-            );
-            
-            if (pendingRequests.length === 0) {
-                list.innerHTML = '';
-                empty.classList.remove('hidden');
-                return;
-            }
-            
-            empty.classList.add('hidden');
-            
-            list.innerHTML = pendingRequests.map(req => {
-                const creator = state.creators.find(c => c.id === req.creatorId);
-                
-                return `
-                    <div class="glass rounded-2xl p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div>
-                                <span class="text-gray-500 text-sm uppercase tracking-wider">Anonymous Creator</span>
-                                <h3 class="text-xl font-bold mt-1">Creator Name Hidden</h3>
-                            </div>
-                            <span class="badge-pending px-3 py-1 rounded-full text-xs font-medium">Pending Review</span>
-                        </div>
-                        
-                        <div class="space-y-3 mb-6">
-                            <div>
-                                <p class="text-sm text-gray-500 mb-1">Content Type</p>
-                                <p class="font-medium">${creator?.contentType || 'Unknown'}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 mb-1">Bio Snippet</p>
-                                <p class="text-gray-400 line-clamp-2">${creator?.bio || 'No bio available'}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 mb-1">Preferred Styles</p>
-                                <div class="flex flex-wrap gap-2">
-                                    ${creator?.preferredStyles.map(s => `
-                                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                            ${s}
-                                        </span>
-                                    `).join('') || ''}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-3">
-                            <button type="button" onclick="passRequest('${req.requestId}')" class="flex-1 btn-danger py-3 rounded-xl font-medium flex items-center justify-center space-x-2">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                                <span>Pass</span>
-                            </button>
-                            <button type="button" onclick="viewFullProfile('${req.requestId}')" class="flex-1 btn-primary py-3 rounded-xl font-medium flex items-center justify-center space-x-2">
-                                <i data-lucide="eye" class="w-4 h-4"></i>
-                                <span>View Full Profile</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            lucide.createIcons();
-        }
-
-        function passRequest(requestId) {
-            console.log("Passing request:", requestId);
-            
-            const req = state.requests.find(r => r.requestId === requestId);
-            if (req) {
-                req.status = 'passed';
-            }
-            
-            showToast('Request passed', 'info');
-            renderEditorRequests();
-        }
-
-        // ==================== FULL PROFILE ====================
-        
-        let currentProfileRequest = null;
-
-        function viewFullProfile(requestId) {
-            console.log("Viewing full profile for request:", requestId);
-            
-            currentProfileRequest = state.requests.find(r => r.requestId === requestId);
-            if (!currentProfileRequest) return;
-            
-            const creator = state.creators.find(c => c.id === currentProfileRequest.creatorId);
-            const editor = state.editors.find(e => e.id === state.currentEditorId);
-            
-            document.getElementById('fullProfileBio').textContent = creator?.bio || '';
-            document.getElementById('fullProfileStream').textContent = creator?.whatStream || '';
-            document.getElementById('fullProfileWant').textContent = creator?.wantEditor || '';
-            
-            document.getElementById('fullProfileTags').innerHTML = `
-                <span class="px-4 py-2 rounded-full text-sm font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                    ${creator?.contentType || 'Unknown'}
-                </span>
-            `;
-            
-            document.getElementById('fullProfileStyles').innerHTML = creator?.preferredStyles.map(s => `
-                <span class="px-4 py-2 rounded-full text-sm font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                    ${s}
-                </span>
-            `).join('') || '';
-            
-            // Show editor clips
-            document.getElementById('fullProfileClips').innerHTML = editor?.clips.map((_, i) => `
-                <div class="aspect-video rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center">
-                    <i data-lucide="video" class="w-8 h-8 text-gray-500"></i>
-                </div>
-            `).join('') || '';
-            
-            showScreen('full-profile');
-        }
-
-        function passFromProfile() {
-            if (currentProfileRequest) {
-                passRequest(currentProfileRequest.requestId);
-                showScreen('editor-requests');
-            }
-        }
-
-        function finalAccept() {
-            console.log("Final accept for request:", currentProfileRequest?.requestId);
-            
-            if (!currentProfileRequest) return;
-            
-            currentProfileRequest.status = 'matched';
-            state.currentMatch = {
-                creatorId: currentProfileRequest.creatorId,
-                editorId: currentProfileRequest.editorId
-            };
-            
-            const creator = state.creators.find(c => c.id === currentProfileRequest.creatorId);
-            const editor = state.editors.find(e => e.id === currentProfileRequest.editorId);
-            
-            document.getElementById('matchCreatorName').textContent = '@' + creator?.displayName || 'Unknown';
-            document.getElementById('matchEditorName').textContent = editor?.realName || 'Unknown';
-            
-            showConfetti();
-            showScreen('match-success');
-            showToast("It's a match! 🎉", 'success');
-        }
-
-        // ==================== CONFETTI ====================
-        
-        function showConfetti() {
-            const container = document.getElementById('confettiContainer');
-            container.innerHTML = '';
-            
-            const colors = ['#667eea', '#764ba2', '#f093fb', '#4ade80', '#fbbf24'];
-            
-            for (let i = 0; i < 100; i++) {
-                const conf = document.createElement('div');
-                conf.className = 'confetti';
-                conf.style.left = Math.random() * 100 + 'vw';
-                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                conf.style.animation = `confetti-fall ${2 + Math.random() * 2}s linear forwards`;
-                conf.style.animationDelay = Math.random() * 2 + 's';
-                container.appendChild(conf);
-            }
-            
-            setTimeout(() => container.innerHTML = '', 5000);
-        }
-
-        // ==================== CHAT ====================
-        
-        function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            
-            if (!text) return;
-            
-            console.log("Sending message:", text);
-            
-            const container = document.getElementById('chatMessages');
-            
-            // Add sent message
-            container.innerHTML += `
-                <div class="flex justify-end mb-4">
-                    <div class="chat-message sent px-4 py-3 rounded-2xl rounded-tr-sm">
-                        <p>${escapeHtml(text)}</p>
-                    </div>
-                </div>
-            `;
-            
-            input.value = '';
-            container.scrollTop = container.scrollHeight;
-            
-            // Simulate reply after delay
-            setTimeout(() => {
-                const replies = [
-                    "Hey! Excited to work with you! 🎬",
-                    "Your content looks amazing! When can we start?",
-                    "I love your streaming style. I have some great ideas for edits!",
-                    "Would you be open to a test edit first?",
-                    "What's your typical upload schedule like?"
-                ];
-                
-                const reply = replies[Math.floor(Math.random() * replies.length)];
-                
-                container.innerHTML += `
-                    <div class="flex justify-start mb-4">
-                        <div class="chat-message received px-4 py-3 rounded-2xl rounded-tl-sm">
-                            <p>${reply}</p>
-                        </div>
-                    </div>
-                `;
-                
-                container.scrollTop = container.scrollHeight;
-            }, 1500);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // ==================== INITIALIZATION ====================
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("CreatorSync initializing...");
-            
-            initializeTags();
-            lucide.createIcons();
-            
-            // Add sample creators to state
-            state.creators = [...sampleCreators];
-            
-            // 🔥 CONNECT TO BACKEND
-            loadLiveData();
-        });
-    </script>
+      lucide.createIcons();
+      showToast("Demo mode loaded ✅ (searchable tags enabled)", "success");
+    });
+  </script>
 </body>
 </html>
