@@ -18,7 +18,7 @@ const twitchRoutes = require('./routes/twitch');
 const db = require('./database/db');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
