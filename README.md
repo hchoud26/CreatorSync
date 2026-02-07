@@ -103,7 +103,6 @@ We noticed that finding creative collaborators in the streaming space is incredi
 
 **Frontend:**
 - HTML5, CSS3, JavaScript (ES6+)
-- Tailwind CSS (styling)
 - Lucide Icons (UI elements)
 
 **Backend:**
