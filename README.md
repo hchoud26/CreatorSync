@@ -121,6 +121,35 @@ We noticed that finding creative collaborators in the streaming space is incredi
 - Postman (API testing)
 
 ---
+CreatorSync/
+├── authentication-node-.../ # Auth module
+├── backend/
+│   ├── data/
+│   │   ├── data.json          # JSON database
+│   │   └── package.json       # Data module config
+│   ├── database/              # SQLite setup
+│   ├── node_modules/          # Dependencies
+│   ├── routes/                # API endpoints
+│   │   ├── auth.js           # Authentication routes
+│   │   ├── chat.js           # Chat functionality
+│   │   ├── creators.js       # Creator endpoints
+│   │   ├── editors.js        # Editor endpoints
+│   │   ├── matches.js        # Matching system
+│   │   └── twitch.js         # Twitch OAuth
+│   ├── scripts/              # Utility scripts
+│   ├── .env.example          # Environment template
+│   ├── package-lock.json
+│   ├── package.json          # Backend dependencies
+│   ├── server.js             # Express server
+│   └── setup.ps1             # Windows setup script
+├── frontend/
+│   ├── assets/
+│   │   └── images/           # Logos, icons
+│   ├── css/                  # Stylesheets
+│   ├── js/                   # JavaScript modules
+│   ├── index.html            # Main app interface
+│   └── .gitkeep
+└── .gitignore
 
 ## Key Features
 
