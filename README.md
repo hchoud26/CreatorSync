@@ -122,32 +122,32 @@ We noticed that finding creative collaborators in the streaming space is incredi
 
 ---
 CreatorSync/
-├── authentication-node-.../ # Auth module
+├── authentication-node-.../ 
 ├── backend/
 │   ├── data/
-│   │   ├── data.json          # JSON database
-│   │   └── package.json       # Data module config
-│   ├── database/              # SQLite setup
-│   ├── node_modules/          # Dependencies
-│   ├── routes/                # API endpoints
-│   │   ├── auth.js           # Authentication routes
-│   │   ├── chat.js           # Chat functionality
-│   │   ├── creators.js       # Creator endpoints
-│   │   ├── editors.js        # Editor endpoints
-│   │   ├── matches.js        # Matching system
-│   │   └── twitch.js         # Twitch OAuth
-│   ├── scripts/              # Utility scripts
-│   ├── .env.example          # Environment template
+│   │   ├── data.json          
+│   │   └── package.json       
+│   ├── database/              
+│   ├── node_modules/          
+│   ├── routes/            
+│   │   ├── auth.js           
+│   │   ├── chat.js          
+│   │   ├── creators.js     
+│   │   ├── editors.js        
+│   │   ├── matches.js        
+│   │   └── twitch.js         
+│   ├── scripts/              
+│   ├── .env.example        
 │   ├── package-lock.json
-│   ├── package.json          # Backend dependencies
-│   ├── server.js             # Express server
-│   └── setup.ps1             # Windows setup script
+│   ├── package.json          
+│   ├── server.js             
+│   └── setup.ps1          
 ├── frontend/
 │   ├── assets/
-│   │   └── images/           # Logos, icons
-│   ├── css/                  # Stylesheets
-│   ├── js/                   # JavaScript modules
-│   ├── index.html            # Main app interface
+│   │   └── images/          
+│   ├── css/                  
+│   ├── js/                   
+│   ├── index.html        
 │   └── .gitkeep
 └── .gitignore
 
