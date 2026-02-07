@@ -1,0 +1,26 @@
+# ---- Base image ----
+FROM node:18-alpine
+
+# Set environment
+ENV NODE_ENV=production
+
+# Create app directory
+WORKDIR /app
+
+# Copy backend dependency files
+COPY backend/package*.json ./backend/
+
+# Install backend dependencies
+RUN cd backend && npm install --production
+
+# Copy backend source
+COPY backend ./backend
+
+# Copy frontend (static files)
+COPY frontend ./frontend
+
+# Expose backend port
+EXPOSE 3000
+
+# Start the backend
+CMD ["node", "backend/server.js"]
